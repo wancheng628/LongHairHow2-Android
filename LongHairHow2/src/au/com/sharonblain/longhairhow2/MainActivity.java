@@ -175,6 +175,10 @@ public class MainActivity extends Activity implements AsyncResponse {
      
                 @Override
                 public void onComplete(Bundle values) {
+                	
+                	if ( !_dialog_progress.isShowing() )
+                		_dialog_progress = ProgressDialog.show(MainActivity.this, "Connecting Facebook...", "Loading profile informations... Please wait a sec.", true);
+                	
                     getProfileInformation() ;
                 }
                 						
@@ -189,8 +193,6 @@ public class MainActivity extends Activity implements AsyncResponse {
 				}
             });
         }
-        
-        
     }
     
     public void getProfileInformation() {
@@ -231,7 +233,7 @@ public class MainActivity extends Activity implements AsyncResponse {
     				    	c = tempStringTokenizer.nextElement().toString();
     				    Locale p = new Locale(l,c);
     				    
-    					params.add(new BasicNameValuePair("country", p.getDisplayCountry()));
+    					params.add(new BasicNameValuePair("country", p.getCountry()));
     				}    					
     				if (profile.has("gender"))
     					params.add(new BasicNameValuePair("gender", profile.getString("gender")));
