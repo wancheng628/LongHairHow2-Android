@@ -1,0 +1,357 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+
+    <GridView
+        android:id="@+id/grid_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:gravity="center"
+        android:listSelector="#00000000"
+        android:numColumns="4"
+        android:overScrollMode="never"
+        android:stretchMode="columnWidth" >
+    </GridView>
+
+    <ImageView
+        android:id="@+id/imgTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="30dp"
+        android:layout_marginRight="30dp"
+        android:layout_marginTop="10dp"
+        android:scaleType="fitStart"
+        android:src="@drawable/sbregistersteptitle_1" />
+
+    <RelativeLayout
+        android:id="@+id/layout_register_1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:alpha="0.9"
+        android:gravity="center_vertical|center_horizontal"
+        android:visibility="visible" >
+
+        <LinearLayout
+            android:id="@+id/layout_email"
+            android:layout_width="240dp"
+            android:layout_height="30dp"
+            android:background="@drawable/sharonblainbutton"
+            android:weightSum="10" >
+
+            <EditText
+                android:id="@+id/txtEmail"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_gravity="left|center_vertical"
+                android:layout_marginLeft="10dp"
+                android:layout_weight="8"
+                android:background="#00000000"
+                android:ellipsize="end"
+                android:hint="Email address..."
+                android:inputType="textEmailAddress"
+                android:lines="1"
+                android:maxLines="1"
+                android:scrollHorizontally="true"
+                android:singleLine="true"
+                android:textColor="#ffffff"
+                android:textColorHint="#dddddd" />
+
+            <TextView
+                android:id="@+id/TextView02"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|center_horizontal"
+                android:layout_weight="2"
+                android:gravity="center_vertical|center_horizontal"
+                android:text="*"
+                android:textColor="#ffffff"
+                android:textSize="25sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_desire_pass"
+            android:layout_width="240dp"
+            android:layout_height="30dp"
+            android:layout_below="@+id/layout_email"
+            android:background="@drawable/sharonblainbutton"
+            android:weightSum="10" >
+
+            <EditText
+                android:id="@+id/txtDesirePass"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_gravity="left|center_vertical"
+                android:layout_marginLeft="10dp"
+                android:layout_weight="8"
+                android:background="#00000000"
+                android:ellipsize="end"
+                android:hint="Desired password..."
+                android:inputType="textEmailAddress|textPassword"
+                android:lines="1"
+                android:maxLines="1"
+                android:scrollHorizontally="true"
+                android:singleLine="true"
+                android:textColor="#ffffff"
+                android:textColorHint="#dddddd" />
+
+            <TextView
+                android:id="@+id/TextView01"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|center_horizontal"
+                android:layout_weight="2"
+                android:gravity="center_vertical|center_horizontal"
+                android:text="*"
+                android:textColor="#ffffff"
+                android:textSize="25sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_repeat_pass"
+            android:layout_width="240dp"
+            android:layout_height="30dp"
+            android:layout_below="@+id/layout_desire_pass"
+            android:background="@drawable/sharonblainbutton"
+            android:weightSum="10" >
+
+            <EditText
+                android:id="@+id/txtRepeatPass"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_gravity="left|center_vertical"
+                android:layout_marginLeft="10dp"
+                android:layout_weight="8"
+                android:background="#00000000"
+                android:ellipsize="end"
+                android:hint="Repeat password..."
+                android:inputType="textEmailAddress|textPassword"
+                android:lines="1"
+                android:maxLines="1"
+                android:scrollHorizontally="true"
+                android:singleLine="true"
+                android:textColor="#ffffff"
+                android:textColorHint="#dddddd" >
+
+            </EditText>
+
+            <TextView
+                android:id="@+id/label_policy"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|center_horizontal"
+                android:layout_weight="2"
+                android:gravity="center_vertical|center_horizontal"
+                android:text="*"
+                android:textColor="#ffffff"
+                android:textSize="25sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_first_name"
+            android:layout_width="240dp"
+            android:layout_height="30dp"
+            android:layout_below="@id/layout_repeat_pass"
+            android:background="@drawable/sharonblainbutton"
+            android:weightSum="10" >
+
+            <EditText
+                android:id="@+id/txtFirstName"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_gravity="left|center_vertical"
+                android:layout_marginLeft="10dp"
+                android:layout_weight="8"
+                android:background="#00000000"
+                android:ellipsize="end"
+                android:hint="First name..."
+                android:inputType="textEmailAddress|textPersonName"
+                android:lines="1"
+                android:maxLines="1"
+                android:scrollHorizontally="true"
+                android:singleLine="true"
+                android:textColor="#ffffff"
+                android:textColorHint="#dddddd" />
+
+            <TextView
+                android:id="@+id/TextView03"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|center_horizontal"
+                android:layout_weight="2"
+                android:gravity="center_vertical|center_horizontal"
+                android:text="*"
+                android:textColor="#ffffff"
+                android:textSize="25sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_last_name"
+            android:layout_width="240dp"
+            android:layout_height="30dp"
+            android:layout_below="@id/layout_first_name"
+            android:background="@drawable/sharonblainbutton"
+            android:weightSum="10" >
+
+            <EditText
+                android:id="@+id/txtLastName"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_gravity="left|center_vertical"
+                android:layout_marginLeft="10dp"
+                android:layout_weight="8"
+                android:background="#00000000"
+                android:ellipsize="end"
+                android:hint="Last name..."
+                android:inputType="textEmailAddress|textPersonName"
+                android:lines="1"
+                android:maxLines="1"
+                android:scrollHorizontally="true"
+                android:singleLine="true"
+                android:textColor="#ffffff"
+                android:textColorHint="#dddddd" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_dob"
+            android:layout_width="240dp"
+            android:layout_height="30dp"
+            android:layout_below="@+id/layout_last_name"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/sharonblainbutton" >
+
+            <TextView
+                android:id="@+id/label_dob"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_vertical|center_horizontal|center"
+                android:background="#00000000"
+                android:ellipsize="end"
+                android:gravity="center_vertical|center_horizontal"
+                android:lines="1"
+                android:maxLines="1"
+                android:scrollHorizontally="true"
+                android:singleLine="true"
+                android:text="DD/MM/YYYY"
+                android:textColor="#ffffff"
+                android:textColorHint="#dddddd" >
+
+            </TextView>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_country"
+            android:layout_width="240dp"
+            android:layout_height="30dp"
+            android:weightSum="10"
+            android:layout_below="@+id/layout_dob"
+            android:background="@drawable/sharonblainbutton" >
+
+            <TextView
+                android:id="@+id/label_countries"
+                android:layout_width="0dip"
+                android:layout_weight="8"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_vertical|center_horizontal|center"
+                android:background="#00000000"
+                android:ellipsize="end"
+                android:gravity="center_vertical|center_horizontal"
+                android:lines="1"
+                android:maxLines="1"
+                android:scrollHorizontally="true"
+                android:singleLine="true"
+                android:text="China"
+                android:textColor="#ffffff"
+                android:textColorHint="#dddddd" />
+
+            <ImageView
+                android:id="@+id/imageView1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="2"
+                android:src="@drawable/locationarrow" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_sex"
+            android:layout_width="240dp"
+            android:layout_height="30dp"
+            android:layout_below="@+id/layout_country"
+            android:background="@drawable/sharonblainbutton" >
+
+            <TextView
+                android:id="@+id/label_sex"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_vertical|center_horizontal|center"
+                android:background="#00000000"
+                android:ellipsize="end"
+                android:gravity="center_vertical|center_horizontal"
+                android:lines="1"
+                android:maxLines="1"
+                android:scrollHorizontally="true"
+                android:singleLine="true"
+                android:text="Male or Female"
+                android:textColor="#ffffff"
+                android:textColorHint="#dddddd" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_nextbutton"
+            android:layout_width="240dp"
+            android:layout_height="30dp"
+            android:layout_below="@id/layout_sex"
+            android:background="@drawable/sharonblainnextbutton"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:id="@+id/label_next"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="10dp"
+                android:background="#00000000"
+                android:ellipsize="end"
+                android:gravity="left|center_vertical"
+                android:lines="1"
+                android:maxLines="1"
+                android:scrollHorizontally="true"
+                android:singleLine="true"
+                android:text="NEXT STEP"
+                android:textColor="#ffffff"
+                android:textColorHint="#dddddd" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+    <include  layout="@layout/activity_register2" android:id="@+id/layout_register_2" android:visibility="gone"/>
+    <include  layout="@layout/activity_register3" android:id="@+id/layout_register_3" android:visibility="gone"/>
+    
+    <RelativeLayout
+        android:id="@+id/layout_prevstep"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_marginBottom="20dp"
+        android:layout_marginLeft="10dp"
+        android:alpha="1"
+        android:background="#000000"
+        android:paddingLeft="10dp"
+        android:visibility="visible" >
+
+        <ImageView
+            android:id="@+id/imgPreviousStep"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="visible" />
+
+    </RelativeLayout>
+
+</RelativeLayout>
