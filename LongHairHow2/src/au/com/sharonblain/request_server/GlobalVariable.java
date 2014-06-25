@@ -1,6 +1,7 @@
 package au.com.sharonblain.request_server;
 
 import android.app.Application;
+import android.graphics.Bitmap;
 public class GlobalVariable extends Application {
     private static GlobalVariable singleton ;
     public static String request_url ;			// For HttpPostTask class's url
@@ -14,7 +15,9 @@ public class GlobalVariable extends Application {
     public static String l_name ;
     public static String email ;
     public static String country ;
+    public static Bitmap photo ;
     
+    public static int request_register ;
     public static GlobalVariable getInstance() {
         return singleton;
     }

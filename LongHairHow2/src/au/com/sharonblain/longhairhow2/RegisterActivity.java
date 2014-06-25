@@ -9,9 +9,13 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.net.Uri;
 import android.os.Bundle;
@@ -31,6 +35,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
@@ -41,8 +46,6 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-import android.graphics.drawable.BitmapDrawable;
 
 import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
@@ -79,6 +82,8 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 	private RelativeLayout layout_register3 ;
 	private ProgressDialog _dialog_progress ;
 	
+	private String birthday, country, gender ;
+	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,6 +101,10 @@ public class RegisterActivity extends Activity implements AsyncResponse{
         utils = new HelperUtils(this);
         InitilizeGridLayout();
 
+        birthday = "" ;
+        country = "" ;
+        gender = "" ;
+        
         _dialog_progress = new ProgressDialog(RegisterActivity.this) ;
         
         imagePaths = utils.getFilePaths();
@@ -159,6 +168,13 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 			}
 		}) ;
         
+        if ( birthday.length() > 1 )
+        	label_dob.setText(birthday) ;
+        if ( country.length() > 1 )
+        	label_country.setText(country) ;
+        if (gender.length() > 1)
+        	label_sex.setText(gender) ;
+        
         layout_country.setOnClickListener(new OnClickListener() {
 			
 			@Override
@@ -178,7 +194,8 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 		        builder.setTitle("Select your country.");
 		        builder.setItems(items, new DialogInterface.OnClickListener() {
 		            public void onClick(DialogInterface dialog, int item) {
-		                label_country.setText(countries.get(item).toString()) ;
+		                country = countries.get(item).toString() ;
+		                label_country.setText(country) ;
 		            }
 		        });
 		        AlertDialog alert = builder.create();
@@ -195,7 +212,8 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 		        builder.setTitle("Set your gender.");
 		        builder.setItems(items, new DialogInterface.OnClickListener() {
 		            public void onClick(DialogInterface dialog, int item) {
-		            	label_sex.setText(items[item].toString()) ;
+		            	gender = items[item].toString() ;
+		            	label_sex.setText(gender) ;
 		            }
 		        });
 		        AlertDialog alert = builder.create();
@@ -207,16 +225,52 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 			
 			@Override
 			public void onClick(View arg0) {
-				nStep = 2 ;
-				setTitleImage() ;
-				layout_prevstep.setVisibility(View.VISIBLE) ;
-				layout_register1.setVisibility(View.GONE) ;
-				layout_register2.setVisibility(View.VISIBLE) ;
 				
-				btnPrevStep.setVisibility(View.VISIBLE) ;
-				Resources res = getResources();
-				int resourceId = res.getIdentifier( "@drawable/step1backbutton", "drawable", getPackageName() );
-				btnPrevStep.setImageResource( resourceId );				
+				if ( txtEmail.getText().toString().length() < 1 )
+				{
+					Toast.makeText(RegisterActivity.this, "Please input the email address", Toast.LENGTH_LONG).show() ;
+				}
+				else if ( !isEmailValid(txtEmail.getText().toString()) )
+				{
+					Toast.makeText(RegisterActivity.this, "Invalid password", Toast.LENGTH_LONG).show() ;
+				}
+				else if ( txtDesirePass.getText().toString().length() < 6 )
+				{
+					Toast.makeText(RegisterActivity.this, "password length must be more than 6 letters", Toast.LENGTH_LONG).show() ;
+				}
+				else if ( txtRepeatPass.getText().toString().length() < 6 )
+				{
+					Toast.makeText(RegisterActivity.this, "password length must be more than 6 letters", Toast.LENGTH_LONG).show() ;
+				}
+				else if ( !txtDesirePass.getText().toString().equals(txtRepeatPass.getText().toString()) )
+				{
+					Toast.makeText(RegisterActivity.this, "Not same password", Toast.LENGTH_LONG).show() ;
+				}
+				else if ( txtFirstName.getText().toString().length() < 1 )
+				{
+					Toast.makeText(RegisterActivity.this, "Please input the first name", Toast.LENGTH_LONG).show() ;
+				}
+				else if ( label_dob.getText().toString().equals("DD/MM/YYYY") )
+				{
+					Toast.makeText(RegisterActivity.this, "Please select your birthday", Toast.LENGTH_LONG).show() ;
+				}
+				else if ( label_sex.getText().toString().equals("Male or Female") )
+				{
+					Toast.makeText(RegisterActivity.this, "Please select your gender", Toast.LENGTH_LONG).show() ;
+				}
+				else
+				{
+					nStep = 2 ;
+					setTitleImage() ;
+					layout_prevstep.setVisibility(View.VISIBLE) ;
+					layout_register1.setVisibility(View.GONE) ;
+					layout_register2.setVisibility(View.VISIBLE) ;
+					
+					btnPrevStep.setVisibility(View.VISIBLE) ;
+					Resources res = getResources();
+					int resourceId = res.getIdentifier( "@drawable/step1backbutton", "drawable", getPackageName() );
+					btnPrevStep.setImageResource( resourceId );	
+				}			
 			}
 		}) ;
         
@@ -228,8 +282,12 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 	    if(file.exists()){
 	    	try {
 				profile_photo = Media.getBitmap(getContentResolver(), Uri.fromFile(file) );
-				profile_photo = Bitmap.createScaledBitmap(profile_photo, 150, 200, true);
-	        	imgPhoto.setImageBitmap(profile_photo);		
+				if ( profile_photo != null )
+				{
+					profile_photo = Bitmap.createScaledBitmap(profile_photo, 150, 200, true);
+					imgPhoto.setImageBitmap(profile_photo);	
+				}
+	        		
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -327,12 +385,13 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 		    		_dialog_progress = ProgressDialog.show(RegisterActivity.this, "Connecting Server...", 
 		    				"Please wait a sec.", true);
 		    	
-				ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+				ArrayList<NameValuePair> params = new ArrayList<NameValuePair>() ;
 				params.add(new BasicNameValuePair("action", "/user/register"));
 				params.add(new BasicNameValuePair("user_id", "-10"));
 				params.add(new BasicNameValuePair("accessToken", GlobalVariable.accessToken));
 				params.add(new BasicNameValuePair("email", txtEmail.getText().toString()));
 				params.add(new BasicNameValuePair("fb_id", "-10"));
+				params.add(new BasicNameValuePair("password", txtDesirePass.getText().toString()));
 				params.add(new BasicNameValuePair("f_name", txtFirstName.getText().toString()));
 				params.add(new BasicNameValuePair("l_name", txtLastName.getText().toString()));
 				params.add(new BasicNameValuePair("country", label_country.getText().toString()));
@@ -341,17 +400,28 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 				params.add(new BasicNameValuePair("profile_pic", ""));
 				
 				GlobalVariable.request_url = "http://longhairhow2.com/api/user/register" ;
-				
+				GlobalVariable.request_register = 1 ;
+				GlobalVariable.photo = profile_photo ;
 				httpTask = new HttpPostTask() ;
 				httpTask.delegate = RegisterActivity.this ;
 				httpTask.execute(params) ;
 				
-				File file = new File(Environment.getExternalStorageDirectory(),  ("longHair_profile.jpg"));
-			    if(file.exists()){
-				    file.delete();				    
-			    }
 			}
 		}) ;
+    }
+    
+    public static boolean isEmailValid(String email) {
+        boolean isValid = false;
+
+        String expression = "^[\\w\\.-]+@([\\w\\-]+\\.)+[A-Z]{2,4}$";
+        CharSequence inputStr = email;
+
+        Pattern pattern = Pattern.compile(expression, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(inputStr);
+        if (matcher.matches()) {
+            isValid = true;
+        }
+        return isValid;
     }
     
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {  
@@ -402,7 +472,8 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 
     private DatePickerDialog.OnDateSetListener datePickerListener = new DatePickerDialog.OnDateSetListener() {
     	public void onDateSet(DatePicker view, int selectedYear, int selectedMonth, int selectedDay) {
-    		label_dob.setText(String.format("%02d / %02d / %04d", selectedDay, (selectedMonth + 1), selectedYear)) ;
+    		birthday = String.format("%02d / %02d / %04d", selectedDay, (selectedMonth + 1), selectedYear) ;
+    		label_dob.setText(birthday) ;
     	}
     };
     
@@ -427,6 +498,28 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 
 	@Override
 	public void processFinish(String output) {
+		if ( _dialog_progress.isShowing() )
+			_dialog_progress.dismiss() ;
+		
+		if (output.length() > 0) {
+			try {
+				JSONObject jsonObj = new JSONObject(output) ;
+				if (jsonObj.get("type").equals("Success"))
+				{
+					Toast.makeText(RegisterActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+				}
+				else
+				{
+					Toast.makeText(RegisterActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+				}
+			
+			} catch (JSONException e) {
+				e.printStackTrace();
 				
+			}
+		} else {
+			Log.e("ServiceHandler", "Couldn't get any data from the url") ;
+			
+		}		
 	}
 }

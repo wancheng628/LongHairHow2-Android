@@ -1,11 +1,13 @@
 package au.com.sharonblain.request_server;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -14,9 +16,12 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
 
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.StrictMode;
+import android.util.Base64;
 import android.util.Log;
 
 public class HttpPostTask extends AsyncTask<ArrayList<NameValuePair>, String, String> 
@@ -40,6 +45,27 @@ public class HttpPostTask extends AsyncTask<ArrayList<NameValuePair>, String, St
             HttpPost httpPost = new HttpPost(GlobalVariable.request_url);
             httpPost.setHeader(header_key, header_value) ;
             httpPost.setEntity(new UrlEncodedFormEntity(param2)) ;
+            
+            if ( GlobalVariable.request_register == 1 )
+            {
+            	httpPost.setHeader("content-type", "multipart/form-data");
+            	httpPost.setHeader("ENCTYPE", "multipart/form-data");
+            	
+            	Bitmap bitmap = GlobalVariable.photo ;
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+                bitmap.recycle();
+                bitmap = null;
+
+                byte[] byteArray=stream.toByteArray();
+                String sendImg=Base64.encodeToString(byteArray,Base64.DEFAULT);
+                List<NameValuePair> profile_photo = new ArrayList<NameValuePair>();
+                profile_photo.add(new BasicNameValuePair("profile_pic", sendImg));
+                httpPost.setEntity(new UrlEncodedFormEntity(profile_photo)) ;
+                
+                GlobalVariable.request_register = 0 ;
+            }
+            
             HttpResponse httpResponse = httpClient.execute(httpPost);
             HttpEntity httpEntity = httpResponse.getEntity();
            

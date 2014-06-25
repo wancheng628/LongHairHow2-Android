@@ -1,6 +1,8 @@
 package au.com.sharonblain.longhairhow2;
 
 import java.util.ArrayList;
+
+import com.squareup.picasso.Picasso;
  
 import android.app.Activity;
 import android.content.res.Resources;
@@ -53,12 +55,14 @@ public class GridViewImageAdapter extends BaseAdapter {
  
         Resources res = _activity.getResources() ;
         int imgId = res.getIdentifier(_filePaths.get(position), "drawable", _activity.getPackageName());
+        Picasso.with(_activity).load(imgId).into(imageView);
+        Picasso.with(_activity).load(imgId).resize(imageWidth, imageWidth).into(imageView) ;
         
-        Bitmap bm = decodeSampledBitmapFromResource(res, imgId, imageWidth, imageWidth);
-        bm = SetBrightness(bm, -70) ;
+        //Bitmap bm = decodeSampledBitmapFromResource(res, imgId, imageWidth, imageWidth);
+        //bm = SetBrightness(bm, -70) ;
         imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
         imageView.setLayoutParams(new GridView.LayoutParams(imageWidth, imageWidth*469/420));        	
-        imageView.setImageBitmap(bm) ;
+        //imageView.setImageBitmap(bm) ;
         imageView.setEnabled(false) ;
         imageView.setVerticalScrollBarEnabled(false) ;
         // image view click listener

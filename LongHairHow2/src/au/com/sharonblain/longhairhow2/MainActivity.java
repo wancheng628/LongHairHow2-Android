@@ -1,6 +1,8 @@
 package au.com.sharonblain.longhairhow2;
 
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -9,6 +11,7 @@ import android.app.ProgressDialog;
 import android.view.View;
 import android.view.View.OnClickListener;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -17,6 +20,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
+import java.util.StringTokenizer;
 import java.util.TimeZone;
 
 import org.apache.http.NameValuePair;
@@ -30,12 +35,14 @@ import com.facebook.android.DialogError;
 import com.facebook.android.Facebook;
 import com.facebook.android.Facebook.DialogListener;
 import com.facebook.android.FacebookError;
+import com.squareup.picasso.Picasso;
 
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 
 import android.util.Log;
 import android.util.TypedValue;
@@ -46,7 +53,6 @@ import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
 import au.com.sharonblain.request_server.HttpPostTask;
 
-@SuppressWarnings("deprecation")
 public class MainActivity extends Activity implements AsyncResponse {
 
 	private HelperUtils utils;
@@ -169,14 +175,7 @@ public class MainActivity extends Activity implements AsyncResponse {
      
                 @Override
                 public void onComplete(Bundle values) {
-                    // Function to handle complete event
-                    // Edit Preferences and update facebook acess_token
-                    SharedPreferences.Editor editor = mPrefs.edit();
-                    editor.putString("access_token",
-                            facebook.getAccessToken());
-                    editor.putLong("access_expires",
-                            facebook.getAccessExpires());
-                    editor.commit();
+                    getProfileInformation() ;
                 }
                 						
                 @Override
@@ -191,34 +190,72 @@ public class MainActivity extends Activity implements AsyncResponse {
             });
         }
         
-        getProfileInformation() ;
+        
     }
     
     public void getProfileInformation() {
         mAsyncRunner.request("me", new RequestListener() {
-            @Override
+            @SuppressWarnings("unchecked")
+			@Override
             public void onComplete(String response, Object state) {
                 Log.d("Profile", response);
+                
+                _request_kind = 2 ;
+                
                 String json = response;
                 try {
                     JSONObject profile = new JSONObject(json);
-                    // getting name of the user
-                    final String name = profile.getString("name");
-                    // getting email of the user
-                    final String email = profile.getString("email");
-     
-                    runOnUiThread(new Runnable() {
-     
-                        @Override
-                        public void run() {
-                            Toast.makeText(getApplicationContext(), "Name: " + name + "\nEmail: " + email, Toast.LENGTH_LONG).show();
-                        }
-     
-                    });
+                    String url_profile_photo = "https://graph.facebook.com/" + profile.getString("id") + "/picture?type=large" ;
+                    Bitmap _profile_photo = Picasso.with(MainActivity.this).load(Uri.parse(url_profile_photo)).get() ;
+                    
+                    ArrayList<NameValuePair> params = new ArrayList<NameValuePair>() ;
+    				params.add(new BasicNameValuePair("action", "/user/login"));
+    				params.add(new BasicNameValuePair("user_id", "-10"));
+    				params.add(new BasicNameValuePair("accessToken", GlobalVariable.accessToken));
+    				
+    				if (profile.has("email"))
+    					params.add(new BasicNameValuePair("email", profile.getString("email")));
+    				if (profile.has("id"))
+    					params.add(new BasicNameValuePair("fb_id", profile.getString("id")));
+    				if (profile.has("first_name"))
+    					params.add(new BasicNameValuePair("f_name", profile.getString("first_name")));
+    				if (profile.has("last_name"))
+    					params.add(new BasicNameValuePair("l_name", profile.getString("last_name")));
+    				if (profile.has("locale"))
+    				{
+    					StringTokenizer tempStringTokenizer = new StringTokenizer(profile.getString("locale"),"_");
+    					String l="", c = "";
+    				    if(tempStringTokenizer.hasMoreTokens())
+    				    	l = tempStringTokenizer.nextElement().toString();
+    				    if(tempStringTokenizer.hasMoreTokens())
+    				    	c = tempStringTokenizer.nextElement().toString();
+    				    Locale p = new Locale(l,c);
+    				    
+    					params.add(new BasicNameValuePair("country", p.getDisplayCountry()));
+    				}    					
+    				if (profile.has("gender"))
+    					params.add(new BasicNameValuePair("gender", profile.getString("gender")));
+    				if (profile.has("birthday"))
+    					params.add(new BasicNameValuePair("dob", profile.getString("birthday")));
+    				
+    				GlobalVariable.request_url = "http://longhairhow2.com/api/user/login" ;
+    				GlobalVariable.request_register = 1 ;
+    				GlobalVariable.photo = _profile_photo ;
+    				
+    				httpTask = new HttpPostTask() ;
+    				httpTask.delegate = MainActivity.this ;
+    				httpTask.execute(params) ;
+    				
+    				File file = new File(Environment.getExternalStorageDirectory(),  ("longHair_profile.jpg"));
+    			    if(file.exists()){
+    				    file.delete();				    
+    			    }
      
                 } catch (JSONException e) {
                     e.printStackTrace();
-                }
+                } catch (IOException e) {
+					e.printStackTrace();
+				}
             }
             
             @Override
@@ -263,13 +300,15 @@ public class MainActivity extends Activity implements AsyncResponse {
     	
     	getSydneyTime() ;
     	
-    	int _userid = prefs.getInt("user_id", -10) ;
+    	String _userid = prefs.getString("user_id", "-10") ;
     	_request_kind = 1 ;
     	ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
 		params.add(new BasicNameValuePair("action", "/common/access-token/grant"));
-		params.add(new BasicNameValuePair("user_id", String.valueOf(_userid)));
+		params.add(new BasicNameValuePair("user_id", _userid));
 		GlobalVariable.request_url = access_token_url ;
 		
+		httpTask = new HttpPostTask() ;
+		httpTask.delegate = this;
 		httpTask.execute(params) ;
     }
     
@@ -354,7 +393,25 @@ public class MainActivity extends Activity implements AsyncResponse {
     		}
     	}
     	
-    	httpTask.cancel(true) ;	
+    	if ( _request_kind == 2 )		// Get Access Token
+    	{
+    		if (output.length() > 0) {
+    			try {
+    				JSONObject jsonObj = new JSONObject(output) ;
+    				Toast.makeText(MainActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+    				
+    			}catch (JSONException e) {
+    				e.printStackTrace();
+    				GlobalVariable.f_valid = false ;
+    				
+    			}
+    		} else {
+    			Toast.makeText(MainActivity.this, "Couldn't get any data from the url", Toast.LENGTH_LONG).show() ;
+    			GlobalVariable.f_valid = false ;
+    			
+    		}
+    	}
+    	
     }
     
     private void InitilizeGridLayout() {
