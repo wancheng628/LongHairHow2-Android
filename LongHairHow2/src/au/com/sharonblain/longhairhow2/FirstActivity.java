@@ -14,6 +14,7 @@ import android.view.View.OnClickListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -24,8 +25,8 @@ import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.StringBody;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -54,6 +55,7 @@ import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
 import au.com.sharonblain.request_server.HttpPostTask;
 
+@SuppressWarnings("deprecation")
 public class FirstActivity extends Activity implements AsyncResponse {
 
 	private HelperUtils utils;
@@ -215,8 +217,7 @@ public class FirstActivity extends Activity implements AsyncResponse {
     
     public void getProfileInformation() {
         mAsyncRunner.request("me", new RequestListener() {
-            @SuppressWarnings("unchecked")
-			@Override
+            @Override
             public void onComplete(String response, Object state) {
                 Log.d("Profile", response);
                 
@@ -228,19 +229,19 @@ public class FirstActivity extends Activity implements AsyncResponse {
                     String url_profile_photo = "https://graph.facebook.com/" + profile.getString("id") + "/picture?type=large" ;
                     Bitmap _profile_photo = Picasso.with(FirstActivity.this).load(Uri.parse(url_profile_photo)).get() ;
                     
-                    ArrayList<NameValuePair> params = new ArrayList<NameValuePair>() ;
-    				params.add(new BasicNameValuePair("action", "/user/login"));
-    				params.add(new BasicNameValuePair("user_id", "-10"));
-    				params.add(new BasicNameValuePair("accessToken", GlobalVariable.accessToken));
+                    MultipartEntity params = new MultipartEntity() ;
+    				params.addPart("action", new StringBody("/user/login"));
+    				params.addPart("user_id", new StringBody("-10"));
+    				params.addPart("accessToken", new StringBody(GlobalVariable.accessToken));
     				
     				if (profile.has("email"))
-    					params.add(new BasicNameValuePair("email", profile.getString("email")));
+    					params.addPart("email", new StringBody(profile.getString("email")));
     				if (profile.has("id"))
-    					params.add(new BasicNameValuePair("fb_id", profile.getString("id")));
+    					params.addPart("fb_id", new StringBody(profile.getString("id")));
     				if (profile.has("first_name"))
-    					params.add(new BasicNameValuePair("f_name", profile.getString("first_name")));
+    					params.addPart("f_name", new StringBody(profile.getString("first_name")));
     				if (profile.has("last_name"))
-    					params.add(new BasicNameValuePair("l_name", profile.getString("last_name")));
+    					params.addPart("l_name", new StringBody(profile.getString("last_name")));
     				if (profile.has("locale"))
     				{
     					StringTokenizer tempStringTokenizer = new StringTokenizer(profile.getString("locale"),"_");
@@ -251,12 +252,13 @@ public class FirstActivity extends Activity implements AsyncResponse {
     				    	c = tempStringTokenizer.nextElement().toString();
     				    Locale p = new Locale(l,c);
     				    
-    					params.add(new BasicNameValuePair("country", p.getCountry()));
-    				}    					
+    					params.addPart("country", new StringBody(p.getCountry()));
+    				}
+    				
     				if (profile.has("gender"))
-    					params.add(new BasicNameValuePair("gender", profile.getString("gender")));
+    					params.addPart("gender", new StringBody(profile.getString("gender")));
     				if (profile.has("birthday"))
-    					params.add(new BasicNameValuePair("dob", profile.getString("birthday")));
+    					params.addPart("dob", new StringBody(profile.getString("birthday")));
     				
     				GlobalVariable.request_url = "http://longhairhow2.com/api/user/login" ;
     				GlobalVariable.request_register = 1 ;
@@ -304,8 +306,7 @@ public class FirstActivity extends Activity implements AsyncResponse {
         });
     }
     
-    @SuppressWarnings("unchecked")
-	private void getAccessToken(Boolean _first)
+    private void getAccessToken(Boolean _first)
     {
     	if ( !_dialog_progress.isShowing() )
     		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
@@ -322,9 +323,16 @@ public class FirstActivity extends Activity implements AsyncResponse {
     	
     	String _userid = prefs.getString("user_id", "-10") ;
     	_request_kind = 1 ;
-    	ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
-		params.add(new BasicNameValuePair("action", "/common/access-token/grant"));
-		params.add(new BasicNameValuePair("user_id", _userid));
+    	
+    	MultipartEntity params = null ;
+		try {
+			params = new MultipartEntity();
+			params.addPart("action", new StringBody("/common/access-token/grant"));
+			params.addPart("user_id", new StringBody(_userid));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		
 		GlobalVariable.request_url = access_token_url ;
 		
 		httpTask = new HttpPostTask() ;

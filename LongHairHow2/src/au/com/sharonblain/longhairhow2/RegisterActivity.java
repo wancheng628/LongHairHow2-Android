@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -14,8 +15,9 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.entity.mime.content.StringBody;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -24,7 +26,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images.Media;
-import android.provider.Settings.Global;
 import android.text.Html;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -47,6 +48,7 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
@@ -54,6 +56,7 @@ import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
 import au.com.sharonblain.request_server.HttpPostTask;
 
+@SuppressWarnings("deprecation")
 public class RegisterActivity extends Activity implements AsyncResponse{
 
 	private HelperUtils utils;
@@ -86,6 +89,7 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 	private ProgressDialog _dialog_progress ;
 	
 	private String birthday = "", country = "", gender = "" ;
+	private File photo_file ;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -160,7 +164,6 @@ public class RegisterActivity extends Activity implements AsyncResponse{
         
         layout_dob.setOnClickListener(new OnClickListener() {
 			
-			@SuppressWarnings("deprecation")
 			@Override
 			public void onClick(View arg0) {
 				showDialog(0) ;
@@ -295,10 +298,10 @@ public class RegisterActivity extends Activity implements AsyncResponse{
         final LinearLayout layout_accept = (LinearLayout)layout_register2.findViewById(R.id.layout_accept) ;
         imgPhoto= (ImageView)layout_register2.findViewById(R.id.imgPhoto) ;
         
-        File file = new File(Environment.getExternalStorageDirectory(),  ("longHair_profile.jpg"));
-	    if(file.exists()){
+        photo_file = new File(Environment.getExternalStorageDirectory(),  ("longHair_profile.jpg"));
+	    if(photo_file.exists()){
 	    	try {
-				profile_photo = Media.getBitmap(getContentResolver(), Uri.fromFile(file) );
+				profile_photo = Media.getBitmap(getContentResolver(), Uri.fromFile(photo_file) );
 				if ( profile_photo != null )
 				{
 					profile_photo = Bitmap.createScaledBitmap(profile_photo, 150, 200, true);
@@ -336,23 +339,23 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 			
 			@Override
 			public void onClick(View arg0) {
-				File file = new File(Environment.getExternalStorageDirectory(),  ("longHair_profile.jpg"));
-			    if(!file.exists()){
+				photo_file = new File(Environment.getExternalStorageDirectory(),  ("longHair_profile.jpg"));
+			    if(!photo_file.exists()){
 				    try {
-				        file.createNewFile();
+				    	photo_file.createNewFile();
 				    } catch (IOException e) {
 				        e.printStackTrace();
 				    }
 				    }else{
-				       file.delete();
+				    	photo_file.delete();
 				    try {
-				       file.createNewFile();
+				    	photo_file.createNewFile();
 				    } catch (IOException e) {
 				        e.printStackTrace();
 				    }
 			    }
 			    
-			    capturedImageUri = Uri.fromFile(file);
+			    capturedImageUri = Uri.fromFile(photo_file);
 			    Log.d("Photo URI", capturedImageUri.getPath()) ;
 			    Intent i = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
 			    i.putExtra(MediaStore.EXTRA_OUTPUT, capturedImageUri);
@@ -394,7 +397,6 @@ public class RegisterActivity extends Activity implements AsyncResponse{
         final LinearLayout layout_register = (LinearLayout)layout_register3.findViewById(R.id.layout_accept) ;
         layout_register.setOnClickListener(new OnClickListener() {
 			
-			@SuppressWarnings("unchecked")
 			@Override
 			public void onClick(View arg0) {
 				
@@ -402,21 +404,27 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 		    		_dialog_progress = ProgressDialog.show(RegisterActivity.this, "Connecting Server...", 
 		    				"Please wait a sec.", true);
 		    	
-				ArrayList<NameValuePair> params = new ArrayList<NameValuePair>() ;
-				params.add(new BasicNameValuePair("action", "/user/register"));
-				params.add(new BasicNameValuePair("user_id", "-10"));
-				params.add(new BasicNameValuePair("accessToken", GlobalVariable.accessToken));
-				params.add(new BasicNameValuePair("email", txtEmail.getText().toString()));
-				params.add(new BasicNameValuePair("pwd", md5(txtDesirePass.getText().toString())));
-				params.add(new BasicNameValuePair("f_name", txtFirstName.getText().toString()));
-				params.add(new BasicNameValuePair("l_name", txtLastName.getText().toString()));
-				params.add(new BasicNameValuePair("country", label_country.getText().toString()));
-				params.add(new BasicNameValuePair("gender", gender));
-				params.add(new BasicNameValuePair("dob", birthday));
+				MultipartEntity params = new MultipartEntity() ;
+				try {
+					params.addPart("action", new StringBody("/user/register"));
+					params.addPart("user_id", new StringBody("-10"));
+					params.addPart("accessToken", new StringBody(GlobalVariable.accessToken));
+					params.addPart("email", new StringBody(txtEmail.getText().toString()));
+					params.addPart("pwd", new StringBody(md5(txtDesirePass.getText().toString())));
+					params.addPart("f_name", new StringBody(txtFirstName.getText().toString()));
+					params.addPart("l_name", new StringBody(txtLastName.getText().toString()));
+					params.addPart("country", new StringBody(label_country.getText().toString()));
+					params.addPart("gender", new StringBody(gender));
+					params.addPart("dob", new StringBody(birthday));
+					params.addPart("profile_pic", new FileBody(photo_file)) ;
+				} catch (UnsupportedEncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				
 				GlobalVariable.request_url = "http://longhairhow2.com/api/user/register" ;
 				GlobalVariable.request_register = 1 ;
-				GlobalVariable.photo = profile_photo ;
+				
 				httpTask = new HttpPostTask() ;
 				httpTask.delegate = RegisterActivity.this ;
 				httpTask.execute(params) ;
@@ -468,8 +476,8 @@ public class RegisterActivity extends Activity implements AsyncResponse{
     	if (resultCode == RESULT_OK) {
 	        if (requestCode == 111) {  
 	            try {
-	            	File file = new File(Environment.getExternalStorageDirectory(),  ("longHair_profile.jpg"));
-	            	profile_photo = Media.getBitmap(getContentResolver(), Uri.fromFile(file) );
+	            	photo_file = new File(Environment.getExternalStorageDirectory(),  ("longHair_profile.jpg"));
+	            	profile_photo = Media.getBitmap(getContentResolver(), Uri.fromFile(photo_file) );
 	            	profile_photo = Bitmap.createScaledBitmap(profile_photo, 150, 200, true);
 	            	imgPhoto.setImageBitmap(profile_photo);
 			        
@@ -482,6 +490,7 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 	        if (requestCode == 112)
 	        {
 	        	Uri selectedImage = data.getData();
+	        	photo_file = new File(getRealPathFromURI(selectedImage));
 	            InputStream imageStream = null ;
 				try {
 					imageStream = getContentResolver().openInputStream(selectedImage);
@@ -494,6 +503,20 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 	            imgPhoto.setImageBitmap(profile_photo);
 	        }
     	}
+    }
+    
+    private String getRealPathFromURI(Uri contentURI) {
+        String result;
+        Cursor cursor = getContentResolver().query(contentURI, null, null, null, null);
+        if (cursor == null) { // Source is Dropbox or other similar local file path
+            result = contentURI.getPath();
+        } else { 
+            cursor.moveToFirst(); 
+            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA); 
+            result = cursor.getString(idx);
+            cursor.close();
+        }
+        return result;
     }
         
     private void setTitleImage() {

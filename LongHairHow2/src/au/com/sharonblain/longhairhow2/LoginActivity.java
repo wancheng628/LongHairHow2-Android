@@ -1,11 +1,12 @@
 package au.com.sharonblain.longhairhow2;
 
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.StringBody;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -26,6 +27,7 @@ import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
 import au.com.sharonblain.request_server.HttpPostTask;
 
+@SuppressWarnings("deprecation")
 public class LoginActivity extends Activity implements AsyncResponse{
 
 	private HelperUtils utils;
@@ -104,19 +106,25 @@ public class LoginActivity extends Activity implements AsyncResponse{
         return "";
     }
     
-    @SuppressWarnings("unchecked")
-	protected void login(String _email, String _password) {
+    protected void login(String _email, String _password) {
     	
     	if ( !_dialog_progress.isShowing() )
     		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
     				"Please wait a sec.", true);
     	
-		ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
-		params.add(new BasicNameValuePair("action", "/user/login"));
-		params.add(new BasicNameValuePair("user_id", "-10"));
-		params.add(new BasicNameValuePair("accessToken", GlobalVariable.accessToken));
-		params.add(new BasicNameValuePair("email", _email));
-		params.add(new BasicNameValuePair("pwd", md5(_password)));
+    	MultipartEntity params = new MultipartEntity();
+		try {
+			params.addPart("action", new StringBody("/user/login"));
+			params.addPart("user_id", new StringBody("-10"));
+			params.addPart("accessToken", new StringBody(GlobalVariable.accessToken));
+			params.addPart("email", new StringBody(_email));
+			params.addPart("pwd", new StringBody(md5(_password)));
+			
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		
 		GlobalVariable.request_url = "http://longhairhow2.com/api/user/login" ;
 		

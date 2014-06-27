@@ -1,37 +1,32 @@
 package au.com.sharonblain.request_server;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
 
-import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.StrictMode;
-import android.util.Base64;
 import android.util.Log;
 
-public class HttpPostTask extends AsyncTask<ArrayList<NameValuePair>, String, String> 
+@SuppressWarnings("deprecation")
+public class HttpPostTask extends AsyncTask<MultipartEntity, String, String> 
 {     
 	public AsyncResponse delegate = null ;
 	private String header_key = "SBHAIR-APPLICATION-ID" ;
 	private String header_value = "sbhair-android-v1.0" ;
 
 	@Override
-	protected String doInBackground(ArrayList<NameValuePair>... param) {
-		ArrayList<NameValuePair> param2 = param[0] ;
+	protected String doInBackground(MultipartEntity... param) {
+		MultipartEntity param2 = param[0] ;
 		InputStream is = null;
 	    String json = "";
 	    
@@ -43,7 +38,8 @@ public class HttpPostTask extends AsyncTask<ArrayList<NameValuePair>, String, St
             DefaultHttpClient httpClient = new DefaultHttpClient();
             HttpPost httpPost = new HttpPost(GlobalVariable.request_url);
             httpPost.setHeader(header_key, header_value) ;
-            
+            httpPost.setEntity(param2);
+            /*
             if ( GlobalVariable.request_register == 1 )
             {
             	Bitmap bitmap = GlobalVariable.photo ;
@@ -64,9 +60,9 @@ public class HttpPostTask extends AsyncTask<ArrayList<NameValuePair>, String, St
                 
                 GlobalVariable.request_register = 0 ;
             }
-            
+           
             httpPost.setEntity(new UrlEncodedFormEntity(param2)) ;
-            
+             */
             HttpResponse httpResponse = httpClient.execute(httpPost);
             HttpEntity httpEntity = httpResponse.getEntity();
            
