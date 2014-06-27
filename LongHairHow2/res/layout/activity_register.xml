@@ -236,7 +236,7 @@
                 android:maxLines="1"
                 android:scrollHorizontally="true"
                 android:singleLine="true"
-                android:text="DD/MM/YYYY"
+                android:text="YYYY/MM/DD"
                 android:textColor="#ffffff"
                 android:textColorHint="#dddddd" >
 
@@ -279,14 +279,14 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/layout_sex"
+            android:id="@+id/layout_gender"
             android:layout_width="240dp"
             android:layout_height="30dp"
             android:layout_below="@+id/layout_country"
             android:background="@drawable/sharonblainbutton" >
 
             <TextView
-                android:id="@+id/label_sex"
+                android:id="@+id/label_gender"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_gravity="center_vertical|center_horizontal|center"
@@ -306,7 +306,7 @@
             android:id="@+id/layout_nextbutton"
             android:layout_width="240dp"
             android:layout_height="30dp"
-            android:layout_below="@id/layout_sex"
+            android:layout_below="@id/layout_gender"
             android:background="@drawable/sharonblainnextbutton"
             android:orientation="horizontal" >
 

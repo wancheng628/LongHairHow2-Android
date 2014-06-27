@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -44,27 +43,29 @@ public class HttpPostTask extends AsyncTask<ArrayList<NameValuePair>, String, St
             DefaultHttpClient httpClient = new DefaultHttpClient();
             HttpPost httpPost = new HttpPost(GlobalVariable.request_url);
             httpPost.setHeader(header_key, header_value) ;
-            httpPost.setEntity(new UrlEncodedFormEntity(param2)) ;
             
             if ( GlobalVariable.request_register == 1 )
             {
-            	httpPost.setHeader("content-type", "multipart/form-data");
-            	httpPost.setHeader("ENCTYPE", "multipart/form-data");
-            	
             	Bitmap bitmap = GlobalVariable.photo ;
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-
-                bitmap.recycle();
-                bitmap = null;
-
-                byte[] byteArray=stream.toByteArray();
-                String sendImg=Base64.encodeToString(byteArray,Base64.DEFAULT);
-                List<NameValuePair> profile_photo = new ArrayList<NameValuePair>();
-                profile_photo.add(new BasicNameValuePair("profile_pic", sendImg));
-                httpPost.setEntity(new UrlEncodedFormEntity(profile_photo)) ;
+            	String sendImg = "" ;
+            	if ( bitmap != null )
+            	{
+            		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            		bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream);
+                    
+                    byte[] byteArray=stream.toByteArray();
+                    sendImg = Base64.encodeToString(byteArray,Base64.DEFAULT);
+                    
+                    //httpPost.addHeader("content-type", "multipart/form-data");
+                	//httpPost.addHeader("ENCTYPE", "multipart/form-data");
+                	
+                    param2.add(new BasicNameValuePair("profile_pic", sendImg));
+            	}
                 
                 GlobalVariable.request_register = 0 ;
             }
+            
+            httpPost.setEntity(new UrlEncodedFormEntity(param2)) ;
             
             HttpResponse httpResponse = httpClient.execute(httpPost);
             HttpEntity httpEntity = httpResponse.getEntity();

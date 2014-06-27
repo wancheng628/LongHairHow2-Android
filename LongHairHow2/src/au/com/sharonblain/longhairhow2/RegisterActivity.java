@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -22,6 +24,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images.Media;
+import android.provider.Settings.Global;
 import android.text.Html;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -70,7 +73,7 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 	 
 	private TextView label_dob ;
 	private TextView label_country ;
-	private TextView label_sex ;
+	private TextView label_gender ;
 	
 	private ImageView img_title ;
 	
@@ -82,7 +85,7 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 	private RelativeLayout layout_register3 ;
 	private ProgressDialog _dialog_progress ;
 	
-	private String birthday, country, gender ;
+	private String birthday = "", country = "", gender = "" ;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,10 +104,6 @@ public class RegisterActivity extends Activity implements AsyncResponse{
         utils = new HelperUtils(this);
         InitilizeGridLayout();
 
-        birthday = "" ;
-        country = "" ;
-        gender = "" ;
-        
         _dialog_progress = new ProgressDialog(RegisterActivity.this) ;
         
         imagePaths = utils.getFilePaths();
@@ -115,7 +114,7 @@ public class RegisterActivity extends Activity implements AsyncResponse{
         final RelativeLayout layout_prevstep = (RelativeLayout)findViewById(R.id.layout_prevstep) ;
         final LinearLayout layout_dob = (LinearLayout)findViewById(R.id.layout_dob) ;
         final LinearLayout layout_country = (LinearLayout)findViewById(R.id.layout_country) ;
-        final LinearLayout layout_sex = (LinearLayout)findViewById(R.id.layout_sex) ;
+        final LinearLayout layout_gender = (LinearLayout)findViewById(R.id.layout_gender) ;
         final LinearLayout layout_next = (LinearLayout)findViewById(R.id.layout_nextbutton) ;
         
         final TextView txtEmail = (TextView)findViewById(R.id.txtEmail) ;
@@ -131,7 +130,7 @@ public class RegisterActivity extends Activity implements AsyncResponse{
         
         label_dob = (TextView)findViewById(R.id.label_dob) ;
         label_country = (TextView)findViewById(R.id.label_countries) ;
-        label_sex = (TextView)findViewById(R.id.label_sex) ;
+        label_gender = (TextView)findViewById(R.id.label_gender) ;
         img_title = (ImageView)findViewById(R.id.imgTitle) ;
         
         layout_prevstep.setOnClickListener(new OnClickListener() {
@@ -168,12 +167,17 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 			}
 		}) ;
         
-        if ( birthday.length() > 1 )
-        	label_dob.setText(birthday) ;
-        if ( country.length() > 1 )
-        	label_country.setText(country) ;
-        if (gender.length() > 1)
-        	label_sex.setText(gender) ;
+        if ( GlobalVariable.tempBirthday.length() > 1 )
+        	label_dob.setText(GlobalVariable.tempBirthday) ;
+        if ( GlobalVariable.tempCountry.length() > 1 )
+        	label_country.setText(GlobalVariable.tempCountry) ;
+        
+        if (GlobalVariable.tempGender.equals("M"))
+        	label_gender.setText("Male") ;
+        else if ( GlobalVariable.tempGender.equals("F") )
+        	label_gender.setText("Female") ;
+        else
+        	label_gender.setText("Male or Female") ;
         
         layout_country.setOnClickListener(new OnClickListener() {
 			
@@ -183,6 +187,7 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 		        final ArrayList<String> countries = new ArrayList<String>();
 		        for (Locale locale : locales) {
 		            String country = locale.getDisplayCountry();
+		            GlobalVariable.tempCountry = country ;
 		            if (country.trim().length()>0 && !countries.contains(country)) {
 		                countries.add(country);
 		            }
@@ -203,7 +208,7 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 			}
 		}) ;
         
-        layout_sex.setOnClickListener(new OnClickListener() {
+        layout_gender.setOnClickListener(new OnClickListener() {
 			
 			@Override
 			public void onClick(View arg0) {
@@ -212,8 +217,20 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 		        builder.setTitle("Set your gender.");
 		        builder.setItems(items, new DialogInterface.OnClickListener() {
 		            public void onClick(DialogInterface dialog, int item) {
-		            	gender = items[item].toString() ;
-		            	label_sex.setText(gender) ;
+		            	if ( item == 0 )
+		            	{
+		            		gender = "M" ;
+		            		label_gender.setText("Male") ;
+		            		GlobalVariable.tempGender = gender ;
+		            	}
+		            	else
+		            	{
+		            		gender = "F" ;
+		            		label_gender.setText("Female") ;
+		            		GlobalVariable.tempGender = gender ;
+		            	}
+		            	
+		            	
 		            }
 		        });
 		        AlertDialog alert = builder.create();
@@ -250,11 +267,11 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 				{
 					Toast.makeText(RegisterActivity.this, "Please input the first name", Toast.LENGTH_LONG).show() ;
 				}
-				else if ( label_dob.getText().toString().equals("DD/MM/YYYY") )
+				else if ( label_dob.getText().toString().equals("YYYY/MM/DD") )
 				{
 					Toast.makeText(RegisterActivity.this, "Please select your birthday", Toast.LENGTH_LONG).show() ;
 				}
-				else if ( label_sex.getText().toString().equals("Male or Female") )
+				else if ( label_gender.getText().toString().equals("Male or Female") )
 				{
 					Toast.makeText(RegisterActivity.this, "Please select your gender", Toast.LENGTH_LONG).show() ;
 				}
@@ -390,14 +407,12 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 				params.add(new BasicNameValuePair("user_id", "-10"));
 				params.add(new BasicNameValuePair("accessToken", GlobalVariable.accessToken));
 				params.add(new BasicNameValuePair("email", txtEmail.getText().toString()));
-				params.add(new BasicNameValuePair("fb_id", "-10"));
-				params.add(new BasicNameValuePair("password", txtDesirePass.getText().toString()));
+				params.add(new BasicNameValuePair("pwd", md5(txtDesirePass.getText().toString())));
 				params.add(new BasicNameValuePair("f_name", txtFirstName.getText().toString()));
 				params.add(new BasicNameValuePair("l_name", txtLastName.getText().toString()));
 				params.add(new BasicNameValuePair("country", label_country.getText().toString()));
-				params.add(new BasicNameValuePair("gender", label_sex.getText().toString()));
-				params.add(new BasicNameValuePair("dob", label_dob.getText().toString()));
-				params.add(new BasicNameValuePair("profile_pic", ""));
+				params.add(new BasicNameValuePair("gender", gender));
+				params.add(new BasicNameValuePair("dob", birthday));
 				
 				GlobalVariable.request_url = "http://longhairhow2.com/api/user/register" ;
 				GlobalVariable.request_register = 1 ;
@@ -408,6 +423,31 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 				
 			}
 		}) ;
+    }
+    
+    public static final String md5(final String s) {
+        final String MD5 = "MD5";
+        try {
+            // Create MD5 Hash
+            MessageDigest digest = java.security.MessageDigest
+                    .getInstance(MD5);
+            digest.update(s.getBytes());
+            byte messageDigest[] = digest.digest();
+
+            // Create Hex String
+            StringBuilder hexString = new StringBuilder();
+            for (byte aMessageDigest : messageDigest) {
+                String h = Integer.toHexString(0xFF & aMessageDigest);
+                while (h.length() < 2)
+                    h = "0" + h;
+                hexString.append(h);
+            }
+            return hexString.toString();
+
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
     
     public static boolean isEmailValid(String email) {
@@ -472,7 +512,8 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 
     private DatePickerDialog.OnDateSetListener datePickerListener = new DatePickerDialog.OnDateSetListener() {
     	public void onDateSet(DatePicker view, int selectedYear, int selectedMonth, int selectedDay) {
-    		birthday = String.format("%02d / %02d / %04d", selectedDay, (selectedMonth + 1), selectedYear) ;
+    		birthday = String.format("%04d/%02d/%02d", selectedYear, (selectedMonth + 1), selectedDay ) ;
+    		GlobalVariable.tempBirthday = birthday ;
     		label_dob.setText(birthday) ;
     	}
     };
@@ -518,8 +559,12 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 				
 			}
 		} else {
-			Log.e("ServiceHandler", "Couldn't get any data from the url") ;
-			
+			Toast.makeText(RegisterActivity.this, "Couldn't get any data from the url", Toast.LENGTH_LONG).show() ;			
 		}		
+		
+		GlobalVariable.tempBirthday = "" ;
+		GlobalVariable.tempCountry = "" ;
+		GlobalVariable.tempGender = "" ;
+		finish() ;
 	}
 }

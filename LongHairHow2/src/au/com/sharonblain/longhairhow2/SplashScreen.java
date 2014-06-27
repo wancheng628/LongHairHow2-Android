@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
+import au.com.sharonblain.request_server.GlobalVariable;
  
 public class SplashScreen extends Activity {
  
@@ -16,6 +17,8 @@ public class SplashScreen extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
  
+        GlobalVariable.accessToken = "" ;
+        
         new Handler().postDelayed(new Runnable() {
             
              // Showing splash screen with a timer. This will be useful when you
@@ -25,7 +28,7 @@ public class SplashScreen extends Activity {
             public void run() {
                 // This method will be executed once the timer is over
                 // Start your app main activity
-                Intent i = new Intent(SplashScreen.this, MainActivity.class);
+                Intent i = new Intent(SplashScreen.this, FirstActivity.class);
                 startActivity(i);
  
                 // close this activity

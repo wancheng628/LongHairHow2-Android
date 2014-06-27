@@ -18,6 +18,11 @@ public class GlobalVariable extends Application {
     public static Bitmap photo ;
     
     public static int request_register ;
+    
+    public static String tempCountry ;
+    public static String tempGender ;
+    public static String tempBirthday ;
+    
     public static GlobalVariable getInstance() {
         return singleton;
     }

@@ -1,5 +1,7 @@
 package au.com.sharonblain.longhairhow2;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 import org.apache.http.NameValuePair;
@@ -74,8 +76,32 @@ public class LoginActivity extends Activity implements AsyncResponse{
 					login( txtEmail.getText().toString(), txtPassword.getText().toString() ) ;
 				}
 			}
-		}) ;
-        
+		}) ;        
+    }
+    
+    public static final String md5(final String s) {
+        final String MD5 = "MD5";
+        try {
+            // Create MD5 Hash
+            MessageDigest digest = java.security.MessageDigest
+                    .getInstance(MD5);
+            digest.update(s.getBytes());
+            byte messageDigest[] = digest.digest();
+
+            // Create Hex String
+            StringBuilder hexString = new StringBuilder();
+            for (byte aMessageDigest : messageDigest) {
+                String h = Integer.toHexString(0xFF & aMessageDigest);
+                while (h.length() < 2)
+                    h = "0" + h;
+                hexString.append(h);
+            }
+            return hexString.toString();
+
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return "";
     }
     
     @SuppressWarnings("unchecked")
@@ -90,7 +116,7 @@ public class LoginActivity extends Activity implements AsyncResponse{
 		params.add(new BasicNameValuePair("user_id", "-10"));
 		params.add(new BasicNameValuePair("accessToken", GlobalVariable.accessToken));
 		params.add(new BasicNameValuePair("email", _email));
-		params.add(new BasicNameValuePair("pwd", _password));
+		params.add(new BasicNameValuePair("pwd", md5(_password)));
 		
 		GlobalVariable.request_url = "http://longhairhow2.com/api/user/login" ;
 		
