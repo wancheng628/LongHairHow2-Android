@@ -15,7 +15,10 @@ public class GlobalVariable extends Application {
     public static String l_name ;
     public static String email ;
     public static String country ;
+    public static String dob ;
+    public static String fb_id ;
     public static Bitmap photo ;
+    public static String profile_photo_path ;
     
     public static int request_register ;
     

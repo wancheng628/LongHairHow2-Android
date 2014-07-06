@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.StringBody;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -21,6 +22,7 @@ import android.widget.GridView;
 import android.widget.Toast;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.content.res.Resources;
 
 import au.com.sharonblain.request_server.AsyncResponse;
@@ -163,13 +165,20 @@ public class LoginActivity extends Activity implements AsyncResponse{
 				JSONObject jsonObj = new JSONObject(output) ;
 				if (jsonObj.get("type").equals("Success"))
 				{
-					JSONObject result = jsonObj.getJSONObject("results") ;
-					GlobalVariable.f_name = result.getString("f_name") ;
-					GlobalVariable.l_name = result.getString("l_name") ;
-					GlobalVariable.email = result.getString("email") ;
-					GlobalVariable.country = result.getString("country") ;
+					JSONArray result = jsonObj.getJSONArray("results") ;
+					JSONObject _result = result.getJSONObject(0) ;
 					
-					Toast.makeText(LoginActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+					GlobalVariable.user_id = _result.getString("u_id") ;
+					GlobalVariable.f_name = _result.getString("f_name") ;
+					GlobalVariable.l_name = _result.getString("l_name") ;
+					GlobalVariable.email = _result.getString("email") ;
+					GlobalVariable.country = _result.getString("country") ;
+					GlobalVariable.dob = _result.getString("dob") ;
+					GlobalVariable.fb_id = _result.getString("fb_id") ;
+					GlobalVariable.profile_photo_path = _result.getString("profile_pic") ;
+
+					Intent myIntent = new Intent(LoginActivity.this, MainActivity.class);
+					startActivity(myIntent);
 				}
 				else
 				{

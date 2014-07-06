@@ -79,6 +79,8 @@ public class FirstActivity extends Activity implements AsyncResponse {
     private AsyncFacebookRunner mAsyncRunner;
     private SharedPreferences mPrefs;
     
+    
+    	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -147,8 +149,17 @@ public class FirstActivity extends Activity implements AsyncResponse {
                 		}
 
 						private void login() {
-							Intent myIntent = new Intent(FirstActivity.this, LoginActivity.class);
-							startActivity(myIntent);
+							
+							if ( Integer.parseInt(GlobalVariable.user_id) > 0 )
+							{
+								Toast.makeText(FirstActivity.this, "You're already signed.", Toast.LENGTH_LONG).show() ;
+							}
+							else
+							{
+								Intent myIntent = new Intent(FirstActivity.this, LoginActivity.class);
+								startActivity(myIntent);
+							}
+							
 						}
                 });
                 
@@ -159,21 +170,32 @@ public class FirstActivity extends Activity implements AsyncResponse {
         
         prefs = PreferenceManager.getDefaultSharedPreferences(this); 
         
-        if ( GlobalVariable.accessToken.length() < 1 )
-        	getAccessToken(true) ;
+        if ( GlobalVariable.accessToken != null )
+        {
+        	if ( GlobalVariable.accessToken.length() < 1 )
+            	getAccessToken(true) ;
+        }
         
         Button btnSkip = (Button)findViewById(R.id.btnSkip) ;
         btnSkip.setOnClickListener(new OnClickListener() {
 			
 			@Override
 			public void onClick(View arg0) {
-				
+				Intent myIntent = new Intent(FirstActivity.this, MainActivity.class);
+				startActivity(myIntent);
 			}
 		}) ;
         
     }
     
     public void loginToFacebook() {
+    	
+    	if ( GlobalVariable.fb_id != null && Integer.parseInt(GlobalVariable.fb_id) > 0 )
+    	{
+    		Toast.makeText(FirstActivity.this, "You're already signed with facebook.", Toast.LENGTH_LONG).show() ;
+    		return ;
+    	}
+    	
         mPrefs = getPreferences(MODE_PRIVATE);
         String access_token = mPrefs.getString("access_token", null);
         long expires = mPrefs.getLong("access_expires", 0);
@@ -472,6 +494,4 @@ public class FirstActivity extends Activity implements AsyncResponse {
             Toast.makeText(this, "portrait", Toast.LENGTH_SHORT).show();
         }
     }
-
-    
 }

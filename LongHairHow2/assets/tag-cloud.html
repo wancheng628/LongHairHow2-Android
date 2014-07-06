@@ -1,0 +1,122 @@
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+            <style>
+                
+                body {
+                    background-color:rgb(255,255,255);
+                    margin:0px !important;
+                    padding:0px !important;
+                    color:black;
+                    font-size:14px;
+                    font-family:"Avenir-Roman","Helvetica";
+                }
+            
+            img {
+                width:100%;
+                height:auto;
+                display:block;
+                margin: 0 auto;
+            }
+            
+            p {
+                margin:20px;
+                font-size:12px;
+            }
+            
+            h1,h2,h3,h4,h5,h6 {
+                font-family:"DINPro-Medium", "Avenir-Roman","Helvetica";
+                margin-left:5px;
+                margin-right:5px;
+            }
+            
+            h1 {
+                font-size:18px;
+                margin-top:0px;
+            }
+            
+            h2,h3,h4,h5,h6 {
+                font-size:16px;
+                margin-top:0px;
+            }
+            
+            .content {
+                width:400px;
+                max-width:calc(100% - 20px);
+                display:block;
+                margin: 15px auto;
+                padding-top:20px;
+                padding-bottom:20px;
+                min-height: 280px;
+                max-height: 280px;
+                height:280px;
+            }
+            
+            .profile_pic {
+                width:120px;
+                height:120px;
+                border-radius:50%;
+                background-size:cover;
+                border: 2px solid black;
+                display:block;
+                margin: 0 auto;
+            }
+            
+            select {
+                width:calc(100% - 10px);
+                margin-left:5px;
+                font-size:14px;
+                margin-right:5px;
+                margin-top:10px;
+                margin-bottom:5px;
+                font-family:"Avenir-Roman","Helvetica" !important;
+            }
+            
+            input {
+                width:calc(100% - 10px);
+                margin-left:5px;
+                font-size:14px;
+                margin-right:5px;
+                margin-top:10px;
+                margin-bottom:5px;
+                font-family:"Avenir-Roman","Helvetica" !important;
+            }
+            
+            input[type=date] {
+                width:calc(100%-10px) !important;
+            }
+            
+            input[type=submit] {
+                height:40px;
+                font-size:18px;
+                text-align:center;
+                background:none;
+                -webkit-appearance:none;
+                background-color: rgb(64,64,64);
+                color:white;
+                border-radius:0px;
+                width:100%;
+                position:fixed;
+                bottom:-5px !important;
+                left:-5px !important;
+            }
+            
+                </style>
+            <link rel="stylesheet" type="text/css" href="./jqcloud.css" />
+            <script src="./jquery.js"></script>
+            <script src="./jqcloud-1.0.4.min.js"></script>
+            
+            </head>
+    <body>
+            <script>
+                var word_array = INSERT-JSON-ARRAY-OF-WORDS;
+                
+                $(function() {
+                    $("#content").jQCloud(word_array);
+                });
+            </script>
+            <div class='content' id='content'>
+                
+            </div>
+    </body>
+</html>

@@ -10,7 +10,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     
     <uses-sdk
-        android:minSdkVersion="9"
+        android:minSdkVersion="14"
         android:targetSdkVersion="19" />
 
     <application
@@ -60,6 +60,42 @@
 	        <meta-data
 	            android:name="android.support.PARENT_ACTIVITY"
 	            android:value="au.com.sharonblain.longhairhow2.MainActivity" />
+	    </activity>
+	    
+        <activity android:name="au.com.sharonblain.longhairhow2.MainActivity"
+                  android:label="@string/app_name">            
+        </activity>
+        
+        <activity
+            android:name="au.com.sharonblain.featured.FeaturedActivity"
+            android:label="@string/app_name">
+	    </activity>
+	    
+        <activity
+            android:name="au.com.sharonblain.featured.FeaturedDetailActivity"
+            android:configChanges="orientation|keyboardHidden"
+            android:label="Featured"
+            android:parentActivityName="au.com.sharonblain.featured.FeaturedActivity" >
+	        <!-- Parent activity meta-data to support 4.0 and lower -->
+	        <meta-data
+	            android:name="android.support.PARENT_ACTIVITY"
+	            android:value="au.com.sharonblain.featured.FeaturedActivity" />
+	    </activity>
+	    
+        <activity
+            android:name="au.com.sharonblain.search.SearchActivity"
+            android:hardwareAccelerated="false"
+            android:label="Search">
+	    </activity>
+	    
+        <activity
+            android:name="au.com.sharonblain.search.SearchListActivity"
+            android:label="@string/app_name">
+	    </activity>
+	    
+        <activity
+            android:name="au.com.sharonblain.yourvideo.YourVideoActivity"
+            android:label="@string/app_name">
 	    </activity>
     </application>
 
