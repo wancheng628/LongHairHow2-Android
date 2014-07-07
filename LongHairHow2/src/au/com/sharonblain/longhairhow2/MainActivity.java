@@ -10,7 +10,7 @@ import android.widget.TabHost;
 import android.widget.TextView;
 import au.com.sharonblain.featured.FeaturedActivity;
 import au.com.sharonblain.search.SearchActivity;
-import au.com.sharonblain.yourvideo.YourVideoActivity;
+import au.com.sharonblain.uservideo.UserVideoActivity;
 
 @SuppressWarnings("deprecation")
 public class MainActivity extends TabActivity {
@@ -22,9 +22,10 @@ public class MainActivity extends TabActivity {
 	}
 	private void setTabs()
 	{
+		addTab("Your Videos", R.drawable.tab_video, UserVideoActivity.class);
 		addTab("Featured", R.drawable.tab_featured, FeaturedActivity.class);
 		addTab("Search", R.drawable.tab_search, SearchActivity.class);
-		addTab("Your Videos", R.drawable.tab_video, YourVideoActivity.class);
+		
 		addTab("News", R.drawable.tab_news, FeaturedActivity.class);
 		addTab("More", R.drawable.tab_more, FeaturedActivity.class);
 		

@@ -12,6 +12,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
@@ -23,6 +24,7 @@ import android.widget.Toast;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 
 import au.com.sharonblain.request_server.AsyncResponse;
@@ -39,6 +41,8 @@ public class LoginActivity extends Activity implements AsyncResponse{
     private int columnWidth;
     private ProgressDialog _dialog_progress ;
 	private HttpPostTask httpTask = new HttpPostTask() ;
+	private EditText txtEmail ;
+	private EditText txtPassword ;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,9 +59,17 @@ public class LoginActivity extends Activity implements AsyncResponse{
         adapter = new GridViewImageAdapter(LoginActivity.this, imagePaths, columnWidth);
         gridView.setAdapter(adapter);
         
-        final EditText txtEmail = (EditText)findViewById(R.id.txtEmail) ;
-        final EditText txtPassword = (EditText)findViewById(R.id.txtPassword) ;
+        txtEmail = (EditText)findViewById(R.id.txtEmail) ;
+        txtPassword = (EditText)findViewById(R.id.txtPassword) ;
         
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this) ; 
+		
+        if ( prefs.getString("prev_password", "") != null && prefs.getString("prev_password", "").length() > 0 )
+			txtPassword.setText(prefs.getString("prev_password", "")) ;
+		
+		if ( prefs.getString("prev_email", "") != null && prefs.getString("prev_email", "").length() > 0 )
+			txtEmail.setText(prefs.getString("prev_email", "")) ;
+		
         Button btnLogin = (Button)findViewById(R.id.btnLogin) ;
         btnLogin.setOnClickListener(new OnClickListener() {
 			
@@ -177,6 +189,12 @@ public class LoginActivity extends Activity implements AsyncResponse{
 					GlobalVariable.fb_id = _result.getString("fb_id") ;
 					GlobalVariable.profile_photo_path = _result.getString("profile_pic") ;
 
+					SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this) ; 
+					SharedPreferences.Editor editor = prefs.edit();
+		    		editor.putString("prev_password",txtPassword.getText().toString()) ;
+		    		editor.putString("prev_email",txtEmail.getText().toString()) ;
+		    		editor.commit();
+		    		
 					Intent myIntent = new Intent(LoginActivity.this, MainActivity.class);
 					startActivity(myIntent);
 				}

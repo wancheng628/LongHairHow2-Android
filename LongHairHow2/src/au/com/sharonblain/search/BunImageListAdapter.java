@@ -49,7 +49,7 @@ public class BunImageListAdapter extends BaseAdapter {
     	LayoutInflater inflater = (LayoutInflater) _context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     	ViewHolder holder ;
     	
-        if(temp==null)
+        if( temp == null )
         {
         	temp = inflater.inflate(R.layout.item_search, arg2,false);
             
@@ -58,6 +58,7 @@ public class BunImageListAdapter extends BaseAdapter {
             holder.description = (TextView)temp.findViewById(R.id.label_search_description);
             holder.photo = (ImageView)temp.findViewById(R.id.img_search_photo) ;            
             temp.setTag(holder) ;
+            
         } else {
 			holder = (ViewHolder) temp.getTag() ;
 		}

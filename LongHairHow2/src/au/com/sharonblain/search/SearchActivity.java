@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.util.Date;
 
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.StringBody;
@@ -35,6 +36,7 @@ public class SearchActivity extends Activity implements AsyncResponse {
 	private ProgressDialog _dialog_progress ;
 	private HttpPostTask httpTask = new HttpPostTask() ;
 	private String htmlString ;
+	private int nRequestKind ;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -70,6 +72,7 @@ public class SearchActivity extends Activity implements AsyncResponse {
 
 	protected void getTagCloud() {
     	
+		nRequestKind = 1 ;
     	if ( !_dialog_progress.isShowing() )
     		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
     				"Please wait a sec.", true);
@@ -146,48 +149,118 @@ public class SearchActivity extends Activity implements AsyncResponse {
 		if ( _dialog_progress.isShowing() )
 			_dialog_progress.dismiss() ;
 		
-		String wordInJSON = "[" ;
-		
-		if (output.length() > 0) {
+		if ( nRequestKind == 1 ) {
+			String wordInJSON = "[" ;
+			
+			if (output.length() > 0) {
+				try {
+					JSONObject jsonObj = new JSONObject(output) ;
+					if (jsonObj.get("type").equals("Success"))
+					{
+						JSONArray result = jsonObj.getJSONArray("results") ;
+						for ( int i = 0 ; i < result.length() ; i++ )
+						{
+							JSONObject jObject = result.getJSONObject(i) ;
+							String _capitalizedString = capitalizaeString(jObject.getString("tag")) ;
+							String _temp = String.format("{text:\"%s\",weight:%s,link:\"cclick-event://%s\"},", 
+									_capitalizedString, jObject.getString("num"), jObject.getString("tag").toLowerCase()) ;
+							
+							wordInJSON = wordInJSON + _temp ;
+						}
+						
+						wordInJSON = wordInJSON.substring(0, wordInJSON.length()-1) ;
+						wordInJSON = wordInJSON + "]" ;
+						
+						htmlString = getAssetsContent() ;
+						htmlString = htmlString.replace("INSERT-JSON-ARRAY-OF-WORDS", wordInJSON) ;
+						
+						startWebView(htmlString);
+					}
+					else
+					{
+						Toast.makeText(SearchActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+						getAccessToken() ;
+					}
+				
+				} catch (JSONException e) {
+					e.printStackTrace();
+					
+				}
+			} else {
+				Log.e("ServiceHandler", "Couldn't get any data from the url") ;
+				
+			}
+		}
+		else {
 			try {
 				JSONObject jsonObj = new JSONObject(output) ;
 				if (jsonObj.get("type").equals("Success"))
 				{
-					JSONArray result = jsonObj.getJSONArray("results") ;
-					for ( int i = 0 ; i < result.length() ; i++ )
+					JSONObject result = jsonObj.getJSONObject("results") ;
+					Date validity = GlobalVariable.getDateFromString(result.getString("validity")) ;
+					
+					if ( validity.after(GlobalVariable.cur_sydney_time) )
 					{
-						JSONObject jObject = result.getJSONObject(i) ;
-						String _capitalizedString = capitalizaeString(jObject.getString("tag")) ;
-						String _temp = String.format("{text:\"%s\",weight:%s,link:\"cclick-event://%s\"},", 
-								_capitalizedString, jObject.getString("num"), jObject.getString("tag").toLowerCase()) ;
+						GlobalVariable.f_valid = true ;
+						setAccessToken(jsonObj) ;
 						
-						wordInJSON = wordInJSON + _temp ;
+						getTagCloud() ;
 					}
-					
-					wordInJSON = wordInJSON.substring(0, wordInJSON.length()-1) ;
-					wordInJSON = wordInJSON + "]" ;
-					
-					htmlString = getAssetsContent() ;
-					htmlString = htmlString.replace("INSERT-JSON-ARRAY-OF-WORDS", wordInJSON) ;
-					//webview.getSettings().setJavaScriptEnabled(true);
-					//webview.loadDataWithBaseURL(null, htmlString, "text/html", "UTF-8", null);
-					
-					startWebView(htmlString);
+					else
+					{
+						GlobalVariable.f_valid = false ;
+						getAccessToken() ;
+					}
+						
 				}
-				else
+				else if (jsonObj.get("type").equals("Error"))
 				{
-					Toast.makeText(SearchActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+					GlobalVariable.f_valid = false ;
+					getAccessToken() ;
 				}
 			
 			} catch (JSONException e) {
 				e.printStackTrace();
-				
+				GlobalVariable.f_valid = false ;
+				getAccessToken() ;
 			}
-		} else {
-			Log.e("ServiceHandler", "Couldn't get any data from the url") ;
-			
 		}
 	}
+	
+	private void setAccessToken(JSONObject jsonObj) throws JSONException
+    {
+    	JSONObject result = jsonObj.getJSONObject("results") ;
+		
+		GlobalVariable.accessToken = result.getString("accessToken") ;
+		GlobalVariable.validity = result.getString("validity") ;
+		GlobalVariable.user_id = result.getString("user_id") ;
+    }
+	
+	private void getAccessToken()
+    {
+		nRequestKind = 2 ;
+		
+    	if ( !_dialog_progress.isShowing() )
+    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
+    				"Getting Access Token... Please wait a sec.", true);
+    	
+    	GlobalVariable.getSydneyTime() ;
+    	
+    	MultipartEntity params = null ;
+		try {
+			params = new MultipartEntity();
+			params.addPart("action", new StringBody("/common/access-token/grant"));
+			params.addPart("user_id", new StringBody(GlobalVariable.user_id));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		
+		GlobalVariable.request_url = "http://longhairhow2.com/api/common/access-token/grant" ;
+		
+		httpTask = new HttpPostTask() ;
+		httpTask.delegate = this;
+		httpTask.execute(params) ;
+    }
 	
 	private void startWebView(String url) {
         

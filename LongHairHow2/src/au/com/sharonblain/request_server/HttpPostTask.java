@@ -38,31 +38,9 @@ public class HttpPostTask extends AsyncTask<MultipartEntity, String, String>
             DefaultHttpClient httpClient = new DefaultHttpClient();
             HttpPost httpPost = new HttpPost(GlobalVariable.request_url);
             httpPost.setHeader(header_key, header_value) ;
-            httpPost.setEntity(param2);
-            /*
-            if ( GlobalVariable.request_register == 1 )
-            {
-            	Bitmap bitmap = GlobalVariable.photo ;
-            	String sendImg = "" ;
-            	if ( bitmap != null )
-            	{
-            		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            		bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream);
-                    
-                    byte[] byteArray=stream.toByteArray();
-                    sendImg = Base64.encodeToString(byteArray,Base64.DEFAULT);
-                    
-                    //httpPost.addHeader("content-type", "multipart/form-data");
-                	//httpPost.addHeader("ENCTYPE", "multipart/form-data");
-                	
-                    param2.add(new BasicNameValuePair("profile_pic", sendImg));
-            	}
-                
-                GlobalVariable.request_register = 0 ;
-            }
-           
-            httpPost.setEntity(new UrlEncodedFormEntity(param2)) ;
-             */
+            if ( param2 != null )
+            	httpPost.setEntity(param2);
+            
             HttpResponse httpResponse = httpClient.execute(httpPost);
             HttpEntity httpEntity = httpResponse.getEntity();
            

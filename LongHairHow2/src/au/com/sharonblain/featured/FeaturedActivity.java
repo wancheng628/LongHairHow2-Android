@@ -2,6 +2,7 @@ package au.com.sharonblain.featured;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Date;
 
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.StringBody;
@@ -26,7 +27,7 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
-import android.widget.Toast;
+
 import au.com.sharonblain.longhairhow2.R;
 import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
@@ -43,6 +44,7 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 	private Switch swh_popular ;
 	private GridView grid ;
 	private Boolean f_featured ;
+	private int nRequestKind ;
 	
 	private ArrayList<String> bun_vid_url, bun_image, bun_description, bun_title, prices ;
 	
@@ -91,7 +93,7 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 				else
 				{
 					label_type.setText("Featured") ;
-					f_featured = true ;			
+					f_featured = true ;	
 					_sendFeaturedRequest("/front-page/get") ;
 				}
 				
@@ -124,6 +126,8 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 	
 	private void _sendFeaturedRequest(String action)
 	{
+		nRequestKind = 1 ;
+		
 		if ( adapter != null )
 		{
 			adapter.clear() ;
@@ -164,62 +168,142 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 		if (_dialog_progress.isShowing())
         	_dialog_progress.dismiss() ;
         
-        if (output.length() > 0) {
-			try {
-				JSONObject jsonObj = new JSONObject(output) ;
-				
-				if (jsonObj.get("type").equals("Success"))
-				{
-					JSONArray result = jsonObj.getJSONArray("results") ;
+		if ( nRequestKind == 1 )
+		{
+			if (output.length() > 0) {
+				try {
+					JSONObject jsonObj = new JSONObject(output) ;
 					
-					bun_vid_url = new ArrayList<String>() ;
-					bun_image = new ArrayList<String>() ;
-					bun_description = new ArrayList<String>() ;
-					bun_title = new ArrayList<String>() ;
-					prices = new ArrayList<String>() ;
-					
-					for ( int i = 0 ; i < result.length() ; i++ )
+					if (jsonObj.get("type").equals("Success"))
 					{
-						bun_vid_url.add(result.getJSONObject(i).getString("bun_vid_url")) ;
-						bun_image.add(result.getJSONObject(i).getString("bun_image")) ;
-						bun_description.add(result.getJSONObject(i).getString("description")) ;
-						bun_title.add(result.getJSONObject(i).getString("title")) ;
-						prices.add(result.getJSONObject(i).getString("price")) ;
+						JSONArray result = jsonObj.getJSONArray("results") ;
 						
-						JSONArray res_videos = result.getJSONObject(i).getJSONArray("videos") ;
+						bun_vid_url = new ArrayList<String>() ;
+						bun_image = new ArrayList<String>() ;
+						bun_description = new ArrayList<String>() ;
+						bun_title = new ArrayList<String>() ;
+						prices = new ArrayList<String>() ;
 						
-						String _temp_id = "", _temp_url = "", _temp_title = "", _temp_image = "" ;
-						
-						for ( int j = 0 ; j < res_videos.length() ; j++ )
+						for ( int i = 0 ; i < result.length() ; i++ )
 						{
-							_temp_id = _temp_id + res_videos.getJSONObject(j).getString("v_id") + "^";
-							_temp_url = _temp_url + res_videos.getJSONObject(j).getString("vid_url") + "^" ;
-							_temp_title = _temp_title + res_videos.getJSONObject(j).getString("vid_title") + "^" ;
-							_temp_image = _temp_image + "http://longhairhow2.com/api" + 
-											res_videos.getJSONObject(j).getString("vid_image") + "^" ;
+							bun_vid_url.add(result.getJSONObject(i).getString("bun_vid_url")) ;
+							bun_image.add(result.getJSONObject(i).getString("bun_image")) ;
+							bun_description.add(result.getJSONObject(i).getString("description")) ;
+							bun_title.add(result.getJSONObject(i).getString("title")) ;
+							prices.add(result.getJSONObject(i).getString("price")) ;
+							
+							JSONArray res_videos = result.getJSONObject(i).getJSONArray("videos") ;
+							
+							String _temp_id = "", _temp_url = "", _temp_title = "", _temp_image = "" ;
+							
+							for ( int j = 0 ; j < res_videos.length() ; j++ )
+							{
+								_temp_id = _temp_id + res_videos.getJSONObject(j).getString("v_id") + "^";
+								_temp_url = _temp_url + res_videos.getJSONObject(j).getString("vid_url") + "^" ;
+								_temp_title = _temp_title + res_videos.getJSONObject(j).getString("vid_title") + "^" ;
+								_temp_image = _temp_image + "http://longhairhow2.com/api" + 
+												res_videos.getJSONObject(j).getString("vid_image") + "^" ;
+							}
+							
+							v_id.add(_temp_id) ;
+							vid_url.add(_temp_url) ;
+							vid_title.add(_temp_title) ;
+							vid_image.add(_temp_image) ;
 						}
 						
-						v_id.add(_temp_id) ;
-						vid_url.add(_temp_url) ;
-						vid_title.add(_temp_title) ;
-						vid_image.add(_temp_image) ;
+						adapter = new GridAdapter(FeaturedActivity.this, vid_title) ;
+						adapter.updateAdapter(bun_title, vid_image, prices, vid_url, bun_description) ;
+						grid.setAdapter(adapter) ;
 					}
+					else
+					{
+						getAccessToken() ;
+						
+					}
+				
+				} catch (JSONException e) {
+					e.printStackTrace();
 					
-					adapter = new GridAdapter(FeaturedActivity.this, vid_title) ;
-					adapter.updateAdapter(bun_title, vid_image, prices, vid_url, bun_description) ;
-					grid.setAdapter(adapter) ;
+					getAccessToken() ;
+					
+					
 				}
-				else
+			} else {
+				Log.e("ServiceHandler", "Couldn't get any data from the url") ;	
+				getAccessToken() ;
+				
+			}
+		}
+		else
+		{
+			try {
+				JSONObject jsonObj = new JSONObject(output) ;
+				if (jsonObj.get("type").equals("Success"))
 				{
-					Toast.makeText(FeaturedActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+					JSONObject result = jsonObj.getJSONObject("results") ;
+					Date validity = GlobalVariable.getDateFromString(result.getString("validity")) ;
+					
+					if ( validity.after(GlobalVariable.cur_sydney_time) )
+					{
+						GlobalVariable.f_valid = true ;
+						setAccessToken(jsonObj) ;
+						
+						_sendFeaturedRequest("/front-page/get") ;
+					}
+					else
+					{
+						GlobalVariable.f_valid = false ;
+						getAccessToken() ;
+					}
+						
+				}
+				else if (jsonObj.get("type").equals("Error"))
+				{
+					GlobalVariable.f_valid = false ;
+					getAccessToken() ;
 				}
 			
 			} catch (JSONException e) {
 				e.printStackTrace();
-				
+				GlobalVariable.f_valid = false ;
+				getAccessToken() ;
 			}
-		} else {
-			Log.e("ServiceHandler", "Couldn't get any data from the url") ;			
-		}        
+		}
+                
 	}
+	
+	private void setAccessToken(JSONObject jsonObj) throws JSONException
+    {
+    	JSONObject result = jsonObj.getJSONObject("results") ;
+		
+		GlobalVariable.accessToken = result.getString("accessToken") ;
+		GlobalVariable.validity = result.getString("validity") ;
+		GlobalVariable.user_id = result.getString("user_id") ;
+    }
+	
+	private void getAccessToken()
+    {
+		nRequestKind = 2 ;
+		
+    	if ( !_dialog_progress.isShowing() )
+    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
+    				"Getting Access Token... Please wait a sec.", true);
+    	
+    	GlobalVariable.getSydneyTime() ;
+    	
+    	MultipartEntity params = null ;
+		try {
+			params = new MultipartEntity();
+			params.addPart("action", new StringBody("/common/access-token/grant"));
+			params.addPart("user_id", new StringBody(GlobalVariable.user_id));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		
+		GlobalVariable.request_url = "http://longhairhow2.com/api/common/access-token/grant" ;
+		
+		httpTask = new HttpPostTask() ;
+		httpTask.delegate = this;
+		httpTask.execute(params) ;
+    }
 }

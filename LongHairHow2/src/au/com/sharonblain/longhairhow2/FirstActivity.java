@@ -4,7 +4,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -16,14 +15,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.StringTokenizer;
-import java.util.TimeZone;
 
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.StringBody;
@@ -65,7 +60,7 @@ public class FirstActivity extends Activity implements AsyncResponse {
     private int columnWidth;
     
     private SharedPreferences prefs ;
-    private Date cur_sydney_time ;
+    
     
     private String access_token_url = "http://longhairhow2.com/api/common/access-token/grant" ;
     private HttpPostTask httpTask = new HttpPostTask() ;
@@ -308,21 +303,18 @@ public class FirstActivity extends Activity implements AsyncResponse {
 
 			@Override
 			public void onIOException(IOException e, Object state) {
-				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
 			public void onFileNotFoundException(FileNotFoundException e,
 					Object state) {
-				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
 			public void onMalformedURLException(MalformedURLException e,
 					Object state) {
-				// TODO Auto-generated method stub
 				
 			}
         });
@@ -341,7 +333,7 @@ public class FirstActivity extends Activity implements AsyncResponse {
     		editor.commit();
     	}
     	
-    	getSydneyTime() ;
+    	GlobalVariable.getSydneyTime() ;
     	
     	String _userid = prefs.getString("user_id", "-10") ;
     	_request_kind = 1 ;
@@ -371,29 +363,6 @@ public class FirstActivity extends Activity implements AsyncResponse {
 		GlobalVariable.user_id = result.getString("user_id") ;
     }
     
-    private void getSydneyTime()
-    {
-    	TimeZone tz = TimeZone.getTimeZone("GMT+10:00");
-    	Calendar c = Calendar.getInstance(tz);
-    	cur_sydney_time = c.getTime() ;
-    }
- 
-    @SuppressLint("SimpleDateFormat")
-	private Date getDateFromString(String str_date)
-    {
-    	Date _date = null ;
-		SimpleDateFormat  format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss") ;  
-		
-		try {  
-			_date = format.parse(str_date) ;     					    
-		} catch (ParseException e) {  
-		    e.printStackTrace() ;  
-		}
-		
-		return _date ;
-		
-    }
-    
     public void processFinish(String output){
     	
     	if ( _dialog_progress.isShowing() )
@@ -407,9 +376,9 @@ public class FirstActivity extends Activity implements AsyncResponse {
     				if (jsonObj.get("type").equals("Success"))
     				{
     					JSONObject result = jsonObj.getJSONObject("results") ;
-    					Date validity = getDateFromString(result.getString("validity")) ;
+    					Date validity = GlobalVariable.getDateFromString(result.getString("validity")) ;
     					
-    					if ( validity.after(cur_sydney_time) )
+    					if ( validity.after(GlobalVariable.cur_sydney_time) )
     					{
     						Toast.makeText(FirstActivity.this, "Success, Valid - Access token : " + result.getString("accessToken"), Toast.LENGTH_LONG).show() ;
     						GlobalVariable.f_valid = true ;
@@ -443,22 +412,39 @@ public class FirstActivity extends Activity implements AsyncResponse {
     		}
     	}
     	
-    	if ( _request_kind == 2 )		// Get Access Token
+    	if ( _request_kind == 2 )		// Get Facebook profile
     	{
     		if (output.length() > 0) {
-    			try {
-    				JSONObject jsonObj = new JSONObject(output) ;
-    				Toast.makeText(FirstActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
-    				
-    			}catch (JSONException e) {
-    				e.printStackTrace();
-    				GlobalVariable.f_valid = false ;
-    				
-    			}
+    			JSONObject jsonObj;
+				try {
+					jsonObj = new JSONObject(output);
+
+	    			if (jsonObj.get("type").equals("Success"))
+					{
+	    				JSONObject result = jsonObj.getJSONObject("results") ;
+	    				GlobalVariable.f_name = result.getString("f_name") ;
+	    				GlobalVariable.l_name = result.getString("l_name") ;
+	    				GlobalVariable.email = result.getString("email") ;
+	    				GlobalVariable.country = result.getString("country") ;
+	    				
+	    				if (result.getString("u_id") != null && result.getString("u_id").length() > 0)
+	    					GlobalVariable.user_id = result.getString("u_id") ;
+	    				
+	    				Intent myIntent = new Intent(FirstActivity.this, MainActivity.class);
+						startActivity(myIntent);
+        			}	
+	    			else
+	    			{
+	    				Toast.makeText(FirstActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+	    			}
+					
+				} catch (JSONException e1) {
+					e1.printStackTrace();
+				}
+    			
     		} else {
     			Toast.makeText(FirstActivity.this, "Couldn't get any data from the url", Toast.LENGTH_LONG).show() ;
-    			GlobalVariable.f_valid = false ;
-    			
+    			GlobalVariable.f_valid = false ;    			
     		}
     	}
     	
@@ -494,4 +480,5 @@ public class FirstActivity extends Activity implements AsyncResponse {
             Toast.makeText(this, "portrait", Toast.LENGTH_SHORT).show();
         }
     }
+
 }

@@ -1,7 +1,15 @@
 package au.com.sharonblain.request_server;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
+
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.graphics.Bitmap;
+
 public class GlobalVariable extends Application {
     private static GlobalVariable singleton ;
     public static String request_url ;			// For HttpPostTask class's url
@@ -26,12 +34,38 @@ public class GlobalVariable extends Application {
     public static String tempGender ;
     public static String tempBirthday ;
     
+    public static Date cur_sydney_time ;
+    
+    @SuppressLint("SimpleDateFormat")
+	public static Date getDateFromString(String str_date)
+    {
+    	Date _date = null ;
+		SimpleDateFormat  format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss") ;  
+		
+		try {  
+			_date = format.parse(str_date) ;     					    
+		} catch (ParseException e) {  
+		    e.printStackTrace() ;  
+		}
+		
+		return _date ;
+		
+    }
+    
     public static GlobalVariable getInstance() {
         return singleton;
     }
+    
     @Override
     public void onCreate() {
         super.onCreate();
         singleton = this;
+    }
+    
+    public static void getSydneyTime()
+    {
+    	TimeZone tz = TimeZone.getTimeZone("GMT+10:00");
+    	Calendar c = Calendar.getInstance(tz);
+    	GlobalVariable.cur_sydney_time = c.getTime() ;
     }
 }

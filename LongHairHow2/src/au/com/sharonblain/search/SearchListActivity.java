@@ -2,6 +2,7 @@ package au.com.sharonblain.search;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 
 import org.apache.http.entity.mime.MultipartEntity;
@@ -33,6 +34,7 @@ public class SearchListActivity extends Activity implements AsyncResponse  {
 	private HttpPostTask httpTask = new HttpPostTask() ;
 	private ListView list ;
 	private ArrayList<BunImageDetailArray> detail_list ;
+	private int nRequestKind ;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -69,6 +71,8 @@ public class SearchListActivity extends Activity implements AsyncResponse  {
 	
 	private void getSearchResult()
 	{
+		nRequestKind = 1 ;
+		
 		if ( !_dialog_progress.isShowing() )
     		_dialog_progress = ProgressDialog.show(SearchListActivity.this, "Connecting Server...", 
     				"Please wait a sec.", true);
@@ -91,90 +95,155 @@ public class SearchListActivity extends Activity implements AsyncResponse  {
 		httpTask.execute(params) ;
 	}
 	
+	private void setAccessToken(JSONObject jsonObj) throws JSONException
+    {
+    	JSONObject result = jsonObj.getJSONObject("results") ;
+		
+		GlobalVariable.accessToken = result.getString("accessToken") ;
+		GlobalVariable.validity = result.getString("validity") ;
+		GlobalVariable.user_id = result.getString("user_id") ;
+    }
+	
+	private void getAccessToken()
+    {
+		nRequestKind = 2 ;
+		
+    	if ( !_dialog_progress.isShowing() )
+    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
+    				"Getting Access Token... Please wait a sec.", true);
+    	
+    	GlobalVariable.getSydneyTime() ;
+    	
+    	MultipartEntity params = null ;
+		try {
+			params = new MultipartEntity();
+			params.addPart("action", new StringBody("/common/access-token/grant"));
+			params.addPart("user_id", new StringBody(GlobalVariable.user_id));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		
+		GlobalVariable.request_url = "http://longhairhow2.com/api/common/access-token/grant" ;
+		
+		httpTask = new HttpPostTask() ;
+		httpTask.delegate = this;
+		httpTask.execute(params) ;
+    }
+	
 	@Override
 	public void processFinish(String output) {
 		if ( _dialog_progress.isShowing() )
 			_dialog_progress.dismiss() ;
 		
-		if (output.length() > 0) {
+		if ( nRequestKind == 1 ) {
+			if (output.length() > 0) {
+				try {
+					JSONObject jsonObj = new JSONObject(output) ;
+					if (jsonObj.get("type").equals("Success"))
+					{
+						JSONObject result = jsonObj.getJSONObject("results") ;
+						
+						ArrayList<BunImageArray> dataArr = new ArrayList<BunImageArray>() ;
+											
+						@SuppressWarnings("unchecked")
+						Iterator<String> iter = result.keys() ;
+					    while (iter.hasNext()) {
+					        String key = iter.next() ;
+					        try {
+					            JSONArray jArray = result.getJSONArray(key) ;
+					            
+					            for ( int i = 0 ; i < jArray.length() ; i++ )
+					            {
+					            	JSONObject jObject = jArray.getJSONObject(i) ; 
+					            	
+					            	BunImageDetailArray _temp = new BunImageDetailArray() ;
+					            	
+					            	_temp.descritpion = jObject.getString("description") ;
+					            	_temp.title = jObject.getString("title") ;
+					            	_temp.video = jObject.getString("bun_vid_url") ;
+					            	
+					            	JSONArray temp = jObject.getJSONArray("videos") ;
+					            	
+					            	String _temp_title = "" ;
+					            	String _temp_images = "" ;
+					            	
+					            	for ( int j = 0 ; j < temp.length() ; j++ )
+					            	{
+					            		JSONObject jObject2 = temp.getJSONObject(j) ;
+					            		
+					            		if ( key.equals(jObject2.getString("v_id")) )
+					            		{
+					            			BunImageArray _item = new BunImageArray(jObject2.getString("vid_title"), "Found in collection " + 
+					            					jObject2.getString("vid_title"), "http://longhairhow2.com/api" + jObject2.getString("vid_image")) ;
+											dataArr.add(_item) ;
+					            		}
+					            		
+					            		_temp_title = _temp_title + jObject2.getString("vid_title") + "^" ;
+					            		_temp_images =  _temp_images + "http://longhairhow2.com/api" + jObject2.getString("vid_image") + "^" ;
+					            	}
+					            	
+					            	_temp.titles = _temp_title ;
+					            	_temp.images = _temp_images ;
+					            	
+					            	detail_list.add(_temp) ;
+					            }
+										
+					        } catch (JSONException e) {
+					            // Something went wrong!
+					        }
+					    }
+					    
+					    BunImageListAdapter adapter = new BunImageListAdapter(SearchListActivity.this, dataArr) ;
+						list.setAdapter(adapter) ;
+					}
+					else
+					{
+						Toast.makeText(SearchListActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+						getAccessToken() ;
+					}
+				
+				} catch (JSONException e) {
+					e.printStackTrace();
+					
+				}
+			} else {
+				Log.e("ServiceHandler", "Couldn't get any data from the url") ;
+				
+			}
+		}
+		else {
 			try {
 				JSONObject jsonObj = new JSONObject(output) ;
 				if (jsonObj.get("type").equals("Success"))
 				{
 					JSONObject result = jsonObj.getJSONObject("results") ;
+					Date validity = GlobalVariable.getDateFromString(result.getString("validity")) ;
 					
-					ArrayList<BunImageArray> dataArr = new ArrayList<BunImageArray>() ;
-					/*
-					for ( int i = 0 ; i < result.length() ; i++ )
+					if ( validity.after(GlobalVariable.cur_sydney_time) )
 					{
-						JSONObject jObject = result.
-						BunImageArray _item = new BunImageArray(jObject.getString("title"), jObject.getString("description"), jObject.getString("bun_image")) ;
-						dataArr.add(_item) ;
-					}*/
-					
-					@SuppressWarnings("unchecked")
-					Iterator<String> iter = result.keys() ;
-				    while (iter.hasNext()) {
-				        String key = iter.next() ;
-				        try {
-				            JSONArray jArray = result.getJSONArray(key) ;
-				            
-				            for ( int i = 0 ; i < jArray.length() ; i++ )
-				            {
-				            	JSONObject jObject = jArray.getJSONObject(i) ; 
-				            	
-				            	BunImageDetailArray _temp = new BunImageDetailArray() ;
-				            	
-				            	_temp.descritpion = jObject.getString("description") ;
-				            	_temp.title = jObject.getString("title") ;
-				            	_temp.video = jObject.getString("bun_vid_url") ;
-				            	
-				            	JSONArray temp = jObject.getJSONArray("videos") ;
-				            	
-				            	String _temp_title = "" ;
-				            	String _temp_images = "" ;
-				            	
-				            	for ( int j = 0 ; j < temp.length() ; j++ )
-				            	{
-				            		JSONObject jObject2 = temp.getJSONObject(j) ;
-				            		
-				            		if ( key.equals(jObject2.getString("v_id")) )
-				            		{
-				            			BunImageArray _item = new BunImageArray(jObject2.getString("vid_title"), "Found in collection " + 
-				            					jObject2.getString("vid_title"), "http://longhairhow2.com/api" + jObject2.getString("vid_image")) ;
-										dataArr.add(_item) ;
-				            		}
-				            		
-				            		_temp_title = _temp_title + jObject2.getString("vid_title") + "^" ;
-				            		_temp_images =  _temp_images + "http://longhairhow2.com/api" + jObject2.getString("vid_image") + "^" ;
-				            	}
-				            	
-				            	_temp.titles = _temp_title ;
-				            	_temp.images = _temp_images ;
-				            	
-				            	detail_list.add(_temp) ;
-				            }
-									
-				        } catch (JSONException e) {
-				            // Something went wrong!
-				        }
-				    }
-				    
-				    BunImageListAdapter adapter = new BunImageListAdapter(SearchListActivity.this, dataArr) ;
-					list.setAdapter(adapter) ;
+						GlobalVariable.f_valid = true ;
+						setAccessToken(jsonObj) ;
+						
+						getSearchResult() ;
+					}
+					else
+					{
+						GlobalVariable.f_valid = false ;
+						getAccessToken() ;
+					}
+						
 				}
-				else
+				else if (jsonObj.get("type").equals("Error"))
 				{
-					Toast.makeText(SearchListActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+					GlobalVariable.f_valid = false ;
+					getAccessToken() ;
 				}
 			
 			} catch (JSONException e) {
 				e.printStackTrace();
-				
+				GlobalVariable.f_valid = false ;
+				getAccessToken() ;
 			}
-		} else {
-			Log.e("ServiceHandler", "Couldn't get any data from the url") ;
-			
 		}
 	}
 	
