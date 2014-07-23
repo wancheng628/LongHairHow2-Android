@@ -1,21 +1,25 @@
 package au.com.sharonblain.featured;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
 
-import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.squareup.picasso.Picasso;
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.assist.ImageScaleType;
+import com.nostra13.universalimageloader.core.assist.ImageSize;
+import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
-import android.net.Uri;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -33,7 +37,6 @@ import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
 import au.com.sharonblain.request_server.HttpPostTask;
 
-@SuppressWarnings("deprecation")
 public class FeaturedActivity extends Activity implements AsyncResponse {
 
 	private HttpPostTask httpTask = new HttpPostTask() ;
@@ -45,9 +48,9 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 	private GridView grid ;
 	private Boolean f_featured ;
 	private int nRequestKind ;
+	private DisplayImageOptions options;
 	
-	private ArrayList<String> bun_vid_url, bun_image, bun_description, bun_title, prices ;
-	
+	private ArrayList<String> b_id, bun_vid_url, bun_image, bun_description, bun_title, prices ;
 	private GridAdapter adapter ;
 	private ArrayList<String> v_id, vid_url, vid_title, vid_image ;
 	
@@ -57,6 +60,9 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
         label_type = (TextView)findViewById(R.id.label_type) ;
         swh_popular = (Switch)findViewById(R.id.switch_popular) ;
         grid = (GridView)findViewById(R.id.grid_photos) ;
+        
+        label_type.setTypeface(GlobalVariable.tf_light) ;
+        swh_popular.setTypeface(GlobalVariable.tf_medium) ;
 	}
 	
 	@Override
@@ -75,9 +81,29 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
         f_featured = swh_popular.isChecked() ;
         
         if ( GlobalVariable.profile_photo_path != null && GlobalVariable.profile_photo_path.length() > 1 )
-        	Picasso.with(FeaturedActivity.this).load(Uri.parse(GlobalVariable.profile_photo_path)).into(imgProfilePhoto) ;
-        else
-        	imgProfilePhoto.setImageBitmap(null) ;
+        {
+        	options = new DisplayImageOptions.Builder()
+    		.showImageForEmptyUri(R.drawable.default_user_icon)
+    		.showImageOnFail(R.drawable.default_user_icon)
+    		.resetViewBeforeLoading(true)
+    		.cacheOnDisk(true)
+    		.imageScaleType(ImageScaleType.EXACTLY)
+    		.bitmapConfig(Bitmap.Config.RGB_565)
+    		.considerExifParams(true)
+    		.displayer(new FadeInBitmapDisplayer(300))
+    		.build();
+        	
+        	ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(getApplicationContext())
+        	.defaultDisplayImageOptions(options)
+        	.build();
+        	ImageLoader.getInstance().init(config);
+        	ImageSize targetSize = new ImageSize(160, 160);
+        	Bitmap bmp = ImageLoader.getInstance().loadImageSync("http://longhairhow2.com/api" + GlobalVariable.profile_photo_path, targetSize, options);
+        	imgProfilePhoto.setImageBitmap(GlobalVariable.getCircularBitmap(bmp)) ;
+        	
+        	imgProfilePhoto.getLayoutParams().width = 80 ;
+        	imgProfilePhoto.getLayoutParams().height = 80 ;
+        }
         
         swh_popular.setOnCheckedChangeListener(new OnCheckedChangeListener() {
 			
@@ -110,16 +136,15 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 					long arg3) {
 				
 				Intent myIntent = new Intent(FeaturedActivity.this, FeaturedDetailActivity.class);
-				
+				myIntent.putExtra("b_id", b_id.get(arg2)) ;
 				myIntent.putExtra("video", bun_vid_url.get(arg2)) ;
 				myIntent.putExtra("title", bun_title.get(arg2)) ;
 				myIntent.putExtra("prices", prices.get(arg2)) ;
 				myIntent.putExtra("images", vid_image.get(arg2)) ;
 				myIntent.putExtra("titles", vid_title.get(arg2)) ;				
 				myIntent.putExtra("description", bun_description.get(arg2)) ;
-				
-				startActivity(myIntent);
-				
+				myIntent.putExtra("v_ids", v_id.get(arg2)) ;
+				startActivity(myIntent);				
 			}
         });
 	}
@@ -139,34 +164,42 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 			grid.setAdapter(adapter) ;
 		}
 		
-		if ( !_dialog_progress.isShowing() )
-    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
-    				"Please wait a sec.", true);
+		if ( _dialog_progress == null || !_dialog_progress.isShowing() )
+		{
+			_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
+	    				"Please wait a sec.", true);			
+		}	
     	
-    	MultipartEntity params = new MultipartEntity();
-		try {
-			params.addPart("action", new StringBody(action));
-			params.addPart("user_id", new StringBody(GlobalVariable.user_id));
-			params.addPart("accessToken", new StringBody(GlobalVariable.accessToken));
-			params.addPart("front_type", new StringBody("hot"));
-			
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
+    	MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+		builder.addTextBody("action", action, ContentType.TEXT_PLAIN);
+		if ( GlobalVariable.user_id == null || GlobalVariable.user_id.length() < 1 )
+			GlobalVariable.user_id = "-10" ;
+		
+		builder.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN);
+		if ( GlobalVariable.accessToken != null )
+			builder.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN);
+		builder.addTextBody("front_type", "hot", ContentType.TEXT_PLAIN);
 		
 		GlobalVariable.request_url = "http://longhairhow2.com/api/front-page/get" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = FeaturedActivity.this ;
-		httpTask.execute(params) ;
+		httpTask.execute(builder) ;
 	}
 	
 	@Override
-	public void processFinish(String output) {
+	public void processFinish(String output) throws IllegalArgumentException {
 		httpTask.delegate = FeaturedActivity.this ;
         
-		if (_dialog_progress.isShowing())
-        	_dialog_progress.dismiss() ;
+		if ( (_dialog_progress != null) && (_dialog_progress.isShowing()) )
+		{
+			try {
+				_dialog_progress.dismiss() ;
+				_dialog_progress = null;
+		    } catch (Exception e) {
+		        // nothing
+		    }
+		}
         
 		if ( nRequestKind == 1 )
 		{
@@ -183,9 +216,11 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 						bun_description = new ArrayList<String>() ;
 						bun_title = new ArrayList<String>() ;
 						prices = new ArrayList<String>() ;
+						b_id = new ArrayList<String>() ;
 						
 						for ( int i = 0 ; i < result.length() ; i++ )
 						{
+							b_id.add(result.getJSONObject(i).getString("b_id")) ;
 							bun_vid_url.add(result.getJSONObject(i).getString("bun_vid_url")) ;
 							bun_image.add(result.getJSONObject(i).getString("bun_image")) ;
 							bun_description.add(result.getJSONObject(i).getString("description")) ;
@@ -285,20 +320,20 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
     {
 		nRequestKind = 2 ;
 		
-    	if ( !_dialog_progress.isShowing() )
-    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
-    				"Getting Access Token... Please wait a sec.", true);
+    	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
+    	{
+    		try {
+    			_dialog_progress = ProgressDialog.show(this, "Connecting Server...", "Getting Access Token... Please wait a sec.", true);
+    		}
+    		catch(NullPointerException e) {
+    			e.printStackTrace() ;
+    		}
+    	}			
     	
     	GlobalVariable.getSydneyTime() ;
-    	
-    	MultipartEntity params = null ;
-		try {
-			params = new MultipartEntity();
-			params.addPart("action", new StringBody("/common/access-token/grant"));
-			params.addPart("user_id", new StringBody(GlobalVariable.user_id));
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
+    	MultipartEntityBuilder params = MultipartEntityBuilder.create() ;
+		params.addTextBody("action", "/common/access-token/grant", ContentType.TEXT_PLAIN);
+		params.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN);
 		
 		GlobalVariable.request_url = "http://longhairhow2.com/api/common/access-token/grant" ;
 		

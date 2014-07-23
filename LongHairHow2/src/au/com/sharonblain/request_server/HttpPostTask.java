@@ -10,23 +10,22 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.os.AsyncTask;
 import android.os.StrictMode;
 import android.util.Log;
 
-@SuppressWarnings("deprecation")
-public class HttpPostTask extends AsyncTask<MultipartEntity, String, String> 
+public class HttpPostTask extends AsyncTask<MultipartEntityBuilder, String, String> 
 {     
 	public AsyncResponse delegate = null ;
 	private String header_key = "SBHAIR-APPLICATION-ID" ;
 	private String header_value = "sbhair-android-v1.0" ;
 
 	@Override
-	protected String doInBackground(MultipartEntity... param) {
-		MultipartEntity param2 = param[0] ;
+	protected String doInBackground(MultipartEntityBuilder... param) {
+		MultipartEntityBuilder builder = param[0] ;
 		InputStream is = null;
 	    String json = "";
 	    
@@ -38,8 +37,8 @@ public class HttpPostTask extends AsyncTask<MultipartEntity, String, String>
             DefaultHttpClient httpClient = new DefaultHttpClient();
             HttpPost httpPost = new HttpPost(GlobalVariable.request_url);
             httpPost.setHeader(header_key, header_value) ;
-            if ( param2 != null )
-            	httpPost.setEntity(param2);
+            if ( builder != null )
+            	httpPost.setEntity(builder.build());
             
             HttpResponse httpResponse = httpClient.execute(httpPost);
             HttpEntity httpEntity = httpResponse.getEntity();

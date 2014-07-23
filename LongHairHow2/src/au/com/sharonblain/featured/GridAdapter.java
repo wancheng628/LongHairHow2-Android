@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
 import au.com.sharonblain.longhairhow2.R;
+import au.com.sharonblain.request_server.GlobalVariable;
 
 public class GridAdapter  extends ArrayAdapter<String>{
 	
@@ -54,7 +55,7 @@ public class GridAdapter  extends ArrayAdapter<String>{
 		
 		holder.flipper = (ViewFlipper) view.findViewById(R.id.flipper) ;
 		holder.txtTitle = (TextView) view.findViewById(R.id.label_hair_name) ;
-        
+        holder.txtTitle.setTypeface(GlobalVariable.tf_medium) ;
 		holder.txtTitle.setText(titles.get(position)) ;
 		String _temp = images.get(position) ;
 		_temp.replace(" ", "").replace(",", "") ;

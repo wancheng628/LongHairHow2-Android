@@ -3,6 +3,7 @@ package au.com.sharonblain.longhairhow2;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import au.com.sharonblain.request_server.GlobalVariable;
@@ -10,7 +11,7 @@ import au.com.sharonblain.request_server.GlobalVariable;
 public class SplashScreen extends Activity {
  
     // Splash screen timer
-     private static int SPLASH_TIME_OUT = 500;
+    private static int SPLASH_TIME_OUT = 500;
  
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -18,6 +19,8 @@ public class SplashScreen extends Activity {
         setContentView(R.layout.activity_splash);
  
         GlobalVariable.accessToken = "" ;
+        GlobalVariable.tf_light = Typeface.createFromAsset(getAssets(), "DINPro-Light.otf");
+        GlobalVariable.tf_medium = Typeface.createFromAsset(getAssets(), "DINPro-Medium.otf");
         
         new Handler().postDelayed(new Runnable() {
             

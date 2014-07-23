@@ -14,6 +14,7 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 import au.com.sharonblain.longhairhow2.R;
+import au.com.sharonblain.request_server.GlobalVariable;
 
 public class BunImageListAdapter extends BaseAdapter {
 
@@ -56,7 +57,10 @@ public class BunImageListAdapter extends BaseAdapter {
         	holder = new ViewHolder() ;
             holder.name = (TextView)temp.findViewById(R.id.label_search_name);
             holder.description = (TextView)temp.findViewById(R.id.label_search_description);
-            holder.photo = (ImageView)temp.findViewById(R.id.img_search_photo) ;            
+            holder.photo = (ImageView)temp.findViewById(R.id.img_search_photo) ;   
+            
+            holder.name.setTypeface(GlobalVariable.tf_medium) ;
+            holder.description.setTypeface(GlobalVariable.tf_medium) ;
             temp.setTag(holder) ;
             
         } else {

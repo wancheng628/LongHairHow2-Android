@@ -15,12 +15,18 @@ public class VideoStreamActivity extends Activity{
 
 	private ProgressDialog pDialog;
 	private VideoView videoview;
+	private int position = 0;
+	private MediaController mediaControls;
 	
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_stream_video) ;
         
+        if (mediaControls == null) {
+        	mediaControls = new MediaController(VideoStreamActivity.this);
+        }
+
         videoview = (VideoView) findViewById(R.id.VideoView);
         pDialog = new ProgressDialog(VideoStreamActivity.this);
         
@@ -31,13 +37,8 @@ public class VideoStreamActivity extends Activity{
         pDialog.show();
  
         try {
-            // Start the MediaController
-            MediaController mediacontroller = new MediaController(
-            		VideoStreamActivity.this);
-            mediacontroller.setAnchorView(videoview);
-            // Get the URL from String VideoURL
-            Uri video = Uri.parse(getIntent().getExtras().getString("address"));
-            videoview.setMediaController(mediacontroller);
+        	videoview.setMediaController(mediaControls) ;
+        	Uri video = Uri.parse(getIntent().getExtras().getString("address"));
             videoview.setVideoURI(video);
  
         } catch (Exception e) {
@@ -47,12 +48,42 @@ public class VideoStreamActivity extends Activity{
  
         videoview.requestFocus();
         videoview.setOnPreparedListener(new OnPreparedListener() {
-            // Close the progress bar and play the video
-            public void onPrepared(MediaPlayer mp) {
-                pDialog.dismiss();
-                videoview.start();
+            
+        	public void onPrepared(MediaPlayer mp) {
+        		if ( (pDialog != null) && (pDialog.isShowing()) )
+        		{
+        			try {
+        				pDialog.dismiss();
+        			} catch (NullPointerException e) {
+        				e.printStackTrace() ;
+        			} catch (IllegalArgumentException e) {
+        				e.printStackTrace() ;
+        			}
+        		}
+                videoview.seekTo(position);
+
+                if (position == 0) {
+                	videoview.start();
+                } else {
+                	videoview.pause();
+                }
             }
         });
 	}
 	
+	@Override
+	public void onSaveInstanceState(Bundle savedInstanceState) {
+		super.onSaveInstanceState(savedInstanceState);
+	
+		savedInstanceState.putInt("Position", videoview.getCurrentPosition());
+		videoview.pause();
+	
+	}
+	
+	@Override
+	public void onRestoreInstanceState(Bundle savedInstanceState) {
+		super.onRestoreInstanceState(savedInstanceState);
+	    position = savedInstanceState.getInt("Position");
+	    videoview.seekTo(position);
+	}	
 }

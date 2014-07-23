@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -15,9 +14,9 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.FileBody;
-import org.apache.http.entity.mime.content.StringBody;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -43,7 +42,6 @@ import android.widget.Toast;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
-import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -56,7 +54,6 @@ import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
 import au.com.sharonblain.request_server.HttpPostTask;
 
-@SuppressWarnings("deprecation")
 public class RegisterActivity extends Activity implements AsyncResponse{
 
 	private HelperUtils utils;
@@ -77,7 +74,7 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 	private TextView label_dob ;
 	private TextView label_country ;
 	private TextView label_gender ;
-	
+	private TextView label_next ;
 	private ImageView img_title ;
 	
 	private RelativeLayout layout_register2 ;
@@ -90,6 +87,7 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 	
 	private String birthday = "", country = "", gender = "" ;
 	private File photo_file ;
+	
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,6 +125,12 @@ public class RegisterActivity extends Activity implements AsyncResponse{
         final TextView txtFirstName = (TextView)findViewById(R.id.txtFirstName) ;
         final TextView txtLastName = (TextView)findViewById(R.id.txtLastName) ;
         
+        txtEmail.setTypeface(GlobalVariable.tf_medium) ;
+        txtDesirePass.setTypeface(GlobalVariable.tf_medium) ;
+        txtRepeatPass.setTypeface(GlobalVariable.tf_medium) ;
+        txtFirstName.setTypeface(GlobalVariable.tf_medium) ;
+        txtLastName.setTypeface(GlobalVariable.tf_medium) ;
+        
         final ImageView btnPrevStep = (ImageView)findViewById(R.id.imgPreviousStep) ;
         
         layout_register1.setVisibility(View.VISIBLE) ;
@@ -136,7 +140,15 @@ public class RegisterActivity extends Activity implements AsyncResponse{
         label_country = (TextView)findViewById(R.id.label_countries) ;
         label_gender = (TextView)findViewById(R.id.label_gender) ;
         img_title = (ImageView)findViewById(R.id.imgTitle) ;
+        label_next = (TextView)findViewById(R.id.label_next) ;
         
+        label_dob.setTypeface(GlobalVariable.tf_medium) ;
+        label_country.setTypeface(GlobalVariable.tf_medium) ;
+        label_gender.setTypeface(GlobalVariable.tf_medium) ;
+        label_next.setTypeface(GlobalVariable.tf_medium) ;
+        
+        TextView label_final_step = (TextView)findViewById(R.id.label_final_step) ;
+        label_final_step.setTypeface(GlobalVariable.tf_medium) ;
         layout_prevstep.setOnClickListener(new OnClickListener() {
 			
 			@Override
@@ -166,9 +178,11 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 			
 			@Override
 			public void onClick(View arg0) {
-				showDialog(0) ;
+				DatePickerDialog dlgDate = new DatePickerDialog(RegisterActivity.this, datePickerListener, year, month, day);
+				dlgDate.show() ;
 			}
 		}) ;
+        
         
         if ( GlobalVariable.tempBirthday.length() > 1 )
         	label_dob.setText(GlobalVariable.tempBirthday) ;
@@ -309,16 +323,17 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 				}
 	        		
 			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}   
 	    }
 	    
         final Button btnTakePhoto= (Button)layout_register2.findViewById(R.id.btnTakePhoto) ;
         final Button btnChoosePhotoFromLibrary= (Button)layout_register2.findViewById(R.id.btnChoosePhotoFromLibrary) ;
+        
+        btnTakePhoto.setTypeface(GlobalVariable.tf_medium) ;
+        btnChoosePhotoFromLibrary.setTypeface(GlobalVariable.tf_medium) ;
         
         layout_accept.setOnClickListener(new OnClickListener() {
 			
@@ -375,6 +390,7 @@ public class RegisterActivity extends Activity implements AsyncResponse{
         
         layout_register3 = (RelativeLayout)findViewById(R.id.layout_register_3) ;
         final TextView label_policy = (TextView)layout_register3.findViewById(R.id.label_policy) ;
+        label_policy.setTypeface(GlobalVariable.tf_light) ;
         label_policy.setMovementMethod(new ScrollingMovementMethod());
         
         InputStream inputStream = getResources().openRawResource(R.drawable.privacy_policy);
@@ -400,34 +416,31 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 			@Override
 			public void onClick(View arg0) {
 				
-				if ( !_dialog_progress.isShowing() )
-		    		_dialog_progress = ProgressDialog.show(RegisterActivity.this, "Connecting Server...", 
-		    				"Please wait a sec.", true);
-		    	
-				MultipartEntity params = new MultipartEntity() ;
-				try {
-					params.addPart("action", new StringBody("/user/register"));
-					params.addPart("user_id", new StringBody("-10"));
-					params.addPart("accessToken", new StringBody(GlobalVariable.accessToken));
-					params.addPart("email", new StringBody(txtEmail.getText().toString()));
-					params.addPart("pwd", new StringBody(md5(txtDesirePass.getText().toString())));
-					params.addPart("f_name", new StringBody(txtFirstName.getText().toString()));
-					params.addPart("l_name", new StringBody(txtLastName.getText().toString()));
-					params.addPart("country", new StringBody(label_country.getText().toString()));
-					params.addPart("gender", new StringBody(gender));
-					params.addPart("dob", new StringBody(birthday));
-					params.addPart("profile_pic", new FileBody(photo_file)) ;
-				} catch (UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				if ( _dialog_progress == null || !_dialog_progress.isShowing() )
+				{
+					_dialog_progress = ProgressDialog.show(RegisterActivity.this, "Connecting Server...", 
+			    				"Please wait a sec.", true);					
 				}
 				
+				MultipartEntityBuilder builder = MultipartEntityBuilder.create() ;
+				builder.addTextBody("action", "/user/register", ContentType.TEXT_PLAIN) ;
+				builder.addTextBody("user_id", "-10", ContentType.TEXT_PLAIN);
+				builder.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN);
+				builder.addTextBody("email", txtEmail.getText().toString(), ContentType.TEXT_PLAIN);
+				builder.addTextBody("pwd", md5(txtDesirePass.getText().toString()), ContentType.TEXT_PLAIN);
+				builder.addTextBody("f_name", txtFirstName.getText().toString(), ContentType.TEXT_PLAIN);
+				builder.addTextBody("l_name", txtLastName.getText().toString(), ContentType.TEXT_PLAIN);
+				builder.addTextBody("country", label_country.getText().toString(), ContentType.TEXT_PLAIN);
+				builder.addTextBody("gender", gender, ContentType.TEXT_PLAIN);
+				builder.addTextBody("dob", birthday, ContentType.TEXT_PLAIN);
+				builder.addPart("profile_pic", new FileBody(photo_file)) ;
+								
 				GlobalVariable.request_url = "http://longhairhow2.com/api/user/register" ;
 				GlobalVariable.request_register = 1 ;
 				
 				httpTask = new HttpPostTask() ;
 				httpTask.delegate = RegisterActivity.this ;
-				httpTask.execute(params) ;
+				httpTask.execute(builder) ;
 				
 			}
 		}) ;
@@ -527,12 +540,6 @@ public class RegisterActivity extends Activity implements AsyncResponse{
         img_title.setImageResource(imgId) ;
     }
     
-    @Override
-    @Deprecated
-    protected Dialog onCreateDialog(int id) {
-    	return new DatePickerDialog(this, datePickerListener, year, month, day);
-    }
-
     private DatePickerDialog.OnDateSetListener datePickerListener = new DatePickerDialog.OnDateSetListener() {
     	public void onDateSet(DatePicker view, int selectedYear, int selectedMonth, int selectedDay) {
     		birthday = String.format("%04d/%02d/%02d", selectedYear, (selectedMonth + 1), selectedDay ) ;
@@ -561,9 +568,16 @@ public class RegisterActivity extends Activity implements AsyncResponse{
     }
 
 	@Override
-	public void processFinish(String output) {
-		if ( _dialog_progress.isShowing() )
-			_dialog_progress.dismiss() ;
+	public void processFinish(String output) throws IllegalArgumentException {
+		if ( (_dialog_progress != null) && (_dialog_progress.isShowing()) )
+		{
+			try {
+				_dialog_progress.dismiss() ;
+				_dialog_progress = null;
+		    } catch (Exception e) {
+		        // nothing
+		    }
+		}
 		
 		if (output.length() > 0) {
 			try {

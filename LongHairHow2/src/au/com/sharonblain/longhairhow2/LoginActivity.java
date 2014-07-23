@@ -1,12 +1,11 @@
 package au.com.sharonblain.longhairhow2;
 
-import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
-import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -31,7 +30,6 @@ import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
 import au.com.sharonblain.request_server.HttpPostTask;
 
-@SuppressWarnings("deprecation")
 public class LoginActivity extends Activity implements AsyncResponse{
 
 	private HelperUtils utils;
@@ -70,26 +68,36 @@ public class LoginActivity extends Activity implements AsyncResponse{
 		if ( prefs.getString("prev_email", "") != null && prefs.getString("prev_email", "").length() > 0 )
 			txtEmail.setText(prefs.getString("prev_email", "")) ;
 		
-        Button btnLogin = (Button)findViewById(R.id.btnLogin) ;
+		txtEmail.setTypeface(GlobalVariable.tf_medium) ;
+		txtPassword.setTypeface(GlobalVariable.tf_medium) ;
+		
+		Button btnLogin = (Button)findViewById(R.id.btnLogin) ;
+		btnLogin.setTypeface(GlobalVariable.tf_medium) ;
+		
         btnLogin.setOnClickListener(new OnClickListener() {
 			
 			@Override
 			public void onClick(View arg0) {
-				if ( GlobalVariable.f_valid == false )
-				{
-					Toast.makeText(LoginActivity.this, "Your access token is invalid now.", Toast.LENGTH_LONG).show() ;
+				try {
+					if ( GlobalVariable.f_valid == null )
+						GlobalVariable.f_valid = false ;
+					
+					if ( txtEmail.getText().toString().length() < 1 )
+					{
+						Toast.makeText(LoginActivity.this, "Please type your email.", Toast.LENGTH_LONG).show() ;
+					}
+					else if ( txtPassword.getText().toString().length() < 1 )
+					{
+						Toast.makeText(LoginActivity.this, "Please type your password.", Toast.LENGTH_LONG).show() ;
+					}
+					else
+					{
+						login( txtEmail.getText().toString(), txtPassword.getText().toString() ) ;
+					}
 				}
-				else if ( txtEmail.getText().toString().length() < 1 )
+				catch (NullPointerException e)
 				{
-					Toast.makeText(LoginActivity.this, "Please type your email.", Toast.LENGTH_LONG).show() ;
-				}
-				else if ( txtPassword.getText().toString().length() < 1 )
-				{
-					Toast.makeText(LoginActivity.this, "Please type your password.", Toast.LENGTH_LONG).show() ;
-				}
-				else
-				{
-					login( txtEmail.getText().toString(), txtPassword.getText().toString() ) ;
+					e.printStackTrace() ;
 				}
 			}
 		}) ;        
@@ -122,29 +130,26 @@ public class LoginActivity extends Activity implements AsyncResponse{
     
     protected void login(String _email, String _password) {
     	
-    	if ( !_dialog_progress.isShowing() )
-    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
-    				"Please wait a sec.", true);
+    	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
+    	{
+    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", "Please wait a sec.", true);    		
+    	}			
     	
-    	MultipartEntity params = new MultipartEntity();
-		try {
-			params.addPart("action", new StringBody("/user/login"));
-			params.addPart("user_id", new StringBody("-10"));
-			params.addPart("accessToken", new StringBody(GlobalVariable.accessToken));
-			params.addPart("email", new StringBody(_email));
-			params.addPart("pwd", new StringBody(md5(_password)));
-			
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
+    	MultipartEntityBuilder builder = MultipartEntityBuilder.create() ;
+    	builder.addTextBody("action", "/user/login", ContentType.TEXT_PLAIN);
+    	builder.addTextBody("user_id", "-10", ContentType.TEXT_PLAIN);
+    	if ( GlobalVariable.accessToken == null )
+    		GlobalVariable.accessToken = "" ;
+    	
+    	builder.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN);
+    	builder.addTextBody("email", _email, ContentType.TEXT_PLAIN);
+    	builder.addTextBody("pwd", md5(_password), ContentType.TEXT_PLAIN);			
 		
 		GlobalVariable.request_url = "http://longhairhow2.com/api/user/login" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = LoginActivity.this ;
-		httpTask.execute(params) ;
+		httpTask.execute(builder) ;
 		
 	}
 
@@ -168,9 +173,16 @@ public class LoginActivity extends Activity implements AsyncResponse{
     }
 
 	@Override
-	public void processFinish(String output) {
-		if ( _dialog_progress.isShowing() )
-			_dialog_progress.dismiss() ;
+	public void processFinish(String output) throws IllegalArgumentException {
+		if ( (_dialog_progress != null) && (_dialog_progress.isShowing()) )
+		{
+			try {
+				_dialog_progress.dismiss() ;
+				_dialog_progress = null;
+		    } catch (Exception e) {
+		        // nothing
+		    }
+		}
 		
 		if (output.length() > 0) {
 			try {

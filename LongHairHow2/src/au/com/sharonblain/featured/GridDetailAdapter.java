@@ -9,6 +9,7 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 import au.com.sharonblain.longhairhow2.R;
+import au.com.sharonblain.request_server.GlobalVariable;
 
 public class GridDetailAdapter extends BaseAdapter {
 	private Context context;
@@ -38,27 +39,27 @@ public class GridDetailAdapter extends BaseAdapter {
 
 	@Override
 	public View getView(int arg0, View arg1, ViewGroup arg2) {
-		LayoutInflater inflater = (LayoutInflater) context
-				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-	 
 		View gridView;
 		ImageView img_photo ;
 		
 		if (arg1 == null) {
-	 		gridView = new View(context);
+	 		LayoutInflater inflater = (LayoutInflater) context
+					.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 	 		gridView = inflater.inflate(R.layout.item_photo_detail, null);
 	 		
-	 		TextView title = (TextView)gridView.findViewById(R.id.label_detail_title) ;
-	 		title.setText(titles[arg0]) ;
-	 		
-	 		img_photo = (ImageView)gridView.findViewById(R.id.img_detail_photo) ;
-	 		ImageLoader p = new ImageLoader(context) ;
-	 		p.DisplayImage(image_urls[arg0], img_photo) ;
-	 		
-		} else {
+	 	} else {
 			gridView = (View) arg1;
 		}
 		
+		TextView title = (TextView)gridView.findViewById(R.id.label_detail_title) ;
+ 		title.setText(titles[arg0]) ;
+ 		title.setTypeface(GlobalVariable.tf_light) ;
+ 		
+ 		img_photo = (ImageView)gridView.findViewById(R.id.img_detail_photo) ;
+ 		
+ 		ImageLoader p = new ImageLoader(context) ;
+ 		p.DisplayImage(image_urls[arg0], img_photo) ;
+ 		
 		int nWidth = arg2.getWidth() / 3 ;
  		
 		img_photo = (ImageView)gridView.findViewById(R.id.img_detail_photo) ;

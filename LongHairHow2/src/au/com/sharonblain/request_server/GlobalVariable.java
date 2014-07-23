@@ -9,6 +9,13 @@ import java.util.TimeZone;
 import android.annotation.SuppressLint;
 import android.app.Application;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
+import android.graphics.Typeface;
+import android.graphics.Bitmap.Config;
+import android.graphics.PorterDuff.Mode;
 
 public class GlobalVariable extends Application {
     private static GlobalVariable singleton ;
@@ -35,6 +42,8 @@ public class GlobalVariable extends Application {
     public static String tempBirthday ;
     
     public static Date cur_sydney_time ;
+    public static Typeface tf_light ;
+    public static Typeface tf_medium ;
     
     @SuppressLint("SimpleDateFormat")
 	public static Date getDateFromString(String str_date)
@@ -51,6 +60,41 @@ public class GlobalVariable extends Application {
 		return _date ;
 		
     }
+    
+    public static Bitmap getCircularBitmap(Bitmap bitmap) {
+	    Bitmap output;
+
+	    if ( bitmap == null )
+	    	return bitmap ;
+	    
+	    if (bitmap.getWidth() > bitmap.getHeight()) {
+	        output = Bitmap.createBitmap(bitmap.getHeight(), bitmap.getHeight(), Config.ARGB_8888);
+	    } else {
+	        output = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getWidth(), Config.ARGB_8888);
+	    }
+
+	    Canvas canvas = new Canvas(output);
+
+	    final int color = 0xff424242;
+	    final Paint paint = new Paint();
+	    final Rect rect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
+
+	    float r = 0;
+
+	    if (bitmap.getWidth() > bitmap.getHeight()) {
+	        r = bitmap.getHeight() / 2;
+	    } else {
+	        r = bitmap.getWidth() / 2;
+	    }
+
+	    paint.setAntiAlias(true);
+	    canvas.drawARGB(0, 0, 0, 0);
+	    paint.setColor(color);
+	    canvas.drawCircle(r, r, r, paint);
+	    paint.setXfermode(new PorterDuffXfermode(Mode.SRC_IN));
+	    canvas.drawBitmap(bitmap, rect, rect, paint);
+	    return output;
+	}
     
     public static GlobalVariable getInstance() {
         return singleton;

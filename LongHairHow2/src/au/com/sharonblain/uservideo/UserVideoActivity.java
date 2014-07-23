@@ -1,10 +1,9 @@
 package au.com.sharonblain.uservideo;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Date;
 
-import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,7 +23,6 @@ import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
 import au.com.sharonblain.request_server.HttpPostTask;
 
-@SuppressWarnings("deprecation")
 public class UserVideoActivity extends Activity implements AsyncResponse {
 
 	private ProgressDialog _dialog_progress ;
@@ -48,8 +46,17 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
 	
 	@Override
 	public void processFinish(String output) {
-		if ( _dialog_progress.isShowing() )
-			_dialog_progress.dismiss() ;
+		if ( (_dialog_progress != null) && (_dialog_progress.isShowing()) )
+		{
+			try {
+				_dialog_progress.dismiss() ;
+				_dialog_progress = null ;
+			} catch (NullPointerException e) {
+				e.printStackTrace() ;
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace() ;
+			}
+		}
 		
 		if ( nRequestKind == 1 ) {
 			if (output.length() > 0) {
@@ -58,22 +65,26 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
 					if (jsonObj.get("type").equals("Success"))
 					{
 						JSONArray result = jsonObj.getJSONArray("results") ;
-						videos = new UserVideoItem[jsonObj.length()] ;
+						videos = new UserVideoItem[result.length()] ;
 						 
-						for ( int i = 0 ; i < jsonObj.length() ; i++ )
+						for ( int i = 0 ; i < result.length() ; i++ )
 						{
-							JSONObject vids = result.getJSONObject(i) ;
-							JSONArray vids_array = vids.getJSONArray("vids") ;
-							JSONObject vid = vids_array.getJSONObject(0) ;
+							try {
+								JSONObject vids = result.getJSONObject(i) ;
+								JSONArray vids_array = vids.getJSONArray("vids") ;
+								JSONObject vid = vids_array.getJSONObject(0) ;
+								
+								UserVideoItem temp = new UserVideoItem() ;
+								temp.p_id = vid.getString("p_id") ;
+								temp.v_id = vid.getString("v_id") ;
+								temp.vid_image = "http://longhairhow2.com/api" + vid.getString("vid_image") ;
+								temp.vid_title = vids.getString("title") ;
+								temp.vid_url = "http://longhairhow2.com/api" + vid.getString("vid_url") ;
 							
-							UserVideoItem temp = new UserVideoItem() ;
-							temp.p_id = vid.getString("p_id") ;
-							temp.v_id = vid.getString("v_id") ;
-							temp.vid_image = "http://longhairhow2.com/api" + vid.getString("vid_image") ;
-							temp.vid_title = vid.getString("vid_title") ;
-							temp.vid_url = "http://longhairhow2.com/api" + vid.getString("vid_url") ;
-						
-							videos[i] = temp ;
+								videos[i] = temp ;
+							}catch (JSONException e) {
+								e.printStackTrace();								
+							}
 						}
 						
 						VideoAdapter adapter = new VideoAdapter(UserVideoActivity.this, videos) ;
@@ -142,26 +153,23 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
     {
 		nRequestKind = 2 ;
 		
-    	if ( !_dialog_progress.isShowing() )
-    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
-    				"Getting Access Token... Please wait a sec.", true);
+    	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
+    	{
+    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", "Getting Access Token... Please wait a sec.", true);    		
+    	}
+    				
     	
     	GlobalVariable.getSydneyTime() ;
     	
-    	MultipartEntity params = null ;
-		try {
-			params = new MultipartEntity();
-			params.addPart("action", new StringBody("/common/access-token/grant"));
-			params.addPart("user_id", new StringBody(GlobalVariable.user_id));
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
+    	MultipartEntityBuilder builder = MultipartEntityBuilder.create() ;
+    	builder.addTextBody("action", "/common/access-token/grant", ContentType.TEXT_PLAIN);
+    	builder.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN);
 		
 		GlobalVariable.request_url = "http://longhairhow2.com/api/common/access-token/grant" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = this;
-		httpTask.execute(params) ;
+		httpTask.execute(builder) ;
     }
 	
 	@Override
@@ -196,25 +204,26 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
     	
 		nRequestKind = 1 ;
 		
-    	if ( !_dialog_progress.isShowing() )
-    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
-    				"Please wait a sec.", true) ;
-    	
-    	MultipartEntity params = new MultipartEntity();
-		try {
-			params.addPart("action", new StringBody("/user/bundles/get")) ;
-			params.addPart("user_id", new StringBody(GlobalVariable.user_id)) ;
-			params.addPart("u_id", new StringBody(GlobalVariable.user_id)) ;
-			params.addPart("accessToken", new StringBody(GlobalVariable.accessToken)) ;
-			
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace() ;
-		}
+    	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
+    	{
+    		try {
+    			_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
+        				"Please wait a sec.", true) ;
+    		}catch (NullPointerException e) {
+    			e.printStackTrace() ;
+    		}
+    	}
+    		
+    	MultipartEntityBuilder builder = MultipartEntityBuilder.create() ;
+    	builder.addTextBody("action", "/user/bundles/get", ContentType.TEXT_PLAIN) ;
+    	builder.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN) ;
+    	builder.addTextBody("u_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN) ;
+    	builder.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN) ;
 		
 		GlobalVariable.request_url = "http://longhairhow2.com/api/user/bundles/get" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = UserVideoActivity.this ;
-		httpTask.execute(params) ;		
+		httpTask.execute(builder) ;		
 	}
 }

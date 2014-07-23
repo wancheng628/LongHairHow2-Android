@@ -11,6 +11,7 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 import au.com.sharonblain.longhairhow2.R;
+import au.com.sharonblain.request_server.GlobalVariable;
 import au.com.sharonblain.uservideo.UserVideoActivity.UserVideoItem;
 
 public class VideoAdapter extends BaseAdapter {
@@ -37,6 +38,7 @@ public class VideoAdapter extends BaseAdapter {
  			TextView title = (TextView) gridView.findViewById(R.id.label_video_title);
 			ImageView photo = (ImageView) gridView.findViewById(R.id.img_video_photo);
 			
+			title.setTypeface(GlobalVariable.tf_light) ;
 			try {
 				title.setText(videoItems[position].vid_title) ;
 				Picasso.with(context).load(Uri.parse(videoItems[position].vid_image)).resize(200, 200).into(photo) ;

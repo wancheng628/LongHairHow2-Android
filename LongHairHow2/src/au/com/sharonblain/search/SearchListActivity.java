@@ -1,12 +1,11 @@
 package au.com.sharonblain.search;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 
-import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -27,7 +26,6 @@ import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
 import au.com.sharonblain.request_server.HttpPostTask;
 
-@SuppressWarnings("deprecation")
 public class SearchListActivity extends Activity implements AsyncResponse  {
 
 	private ProgressDialog _dialog_progress ;
@@ -61,6 +59,9 @@ public class SearchListActivity extends Activity implements AsyncResponse  {
 				myIntent.putExtra("video", detail_list.get(arg2).video) ;
 				myIntent.putExtra("images", detail_list.get(arg2).images) ;
 				myIntent.putExtra("titles", detail_list.get(arg2).titles) ;
+				myIntent.putExtra("b_id", detail_list.get(arg2).b_id) ;
+				myIntent.putExtra("prices", detail_list.get(arg2).prices) ;
+				myIntent.putExtra("v_ids", detail_list.get(arg2).v_ids) ;
 				
 				startActivity(myIntent);
 			}
@@ -73,20 +74,17 @@ public class SearchListActivity extends Activity implements AsyncResponse  {
 	{
 		nRequestKind = 1 ;
 		
-		if ( !_dialog_progress.isShowing() )
-    		_dialog_progress = ProgressDialog.show(SearchListActivity.this, "Connecting Server...", 
-    				"Please wait a sec.", true);
-    	
-    	MultipartEntity params = new MultipartEntity();
-		try {
-			params.addPart("action", new StringBody("/vid/search"));
-			params.addPart("user_id", new StringBody(GlobalVariable.user_id));
-			params.addPart("accessToken", new StringBody(GlobalVariable.accessToken));
-			params.addPart("query", new StringBody(getIntent().getExtras().getString("query"))) ;
-			
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
+		if ( _dialog_progress == null || !_dialog_progress.isShowing() )
+		{
+			_dialog_progress = ProgressDialog.show(SearchListActivity.this, "Connecting Server...", "Please wait a sec.", true);			
 		}
+    				
+    	
+    	MultipartEntityBuilder params = MultipartEntityBuilder.create() ;
+		params.addTextBody("action", "/vid/search", ContentType.TEXT_PLAIN) ;
+		params.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN) ;
+		params.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN) ;
+		params.addTextBody("query", getIntent().getExtras().getString("query"), ContentType.TEXT_PLAIN) ;
 		
 		GlobalVariable.request_url = "http://longhairhow2.com/api/vid/search" ;
 		
@@ -108,20 +106,17 @@ public class SearchListActivity extends Activity implements AsyncResponse  {
     {
 		nRequestKind = 2 ;
 		
-    	if ( !_dialog_progress.isShowing() )
+    	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
+    	{
     		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
-    				"Getting Access Token... Please wait a sec.", true);
+        				"Getting Access Token... Please wait a sec.", true);    		
+    	}	
     	
     	GlobalVariable.getSydneyTime() ;
     	
-    	MultipartEntity params = null ;
-		try {
-			params = new MultipartEntity();
-			params.addPart("action", new StringBody("/common/access-token/grant"));
-			params.addPart("user_id", new StringBody(GlobalVariable.user_id));
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
+    	MultipartEntityBuilder params = MultipartEntityBuilder.create() ;
+		params.addTextBody("action", "/common/access-token/grant", ContentType.TEXT_PLAIN) ;
+		params.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN) ;
 		
 		GlobalVariable.request_url = "http://longhairhow2.com/api/common/access-token/grant" ;
 		
@@ -132,8 +127,17 @@ public class SearchListActivity extends Activity implements AsyncResponse  {
 	
 	@Override
 	public void processFinish(String output) {
-		if ( _dialog_progress.isShowing() )
-			_dialog_progress.dismiss() ;
+		if ( (_dialog_progress != null) && (_dialog_progress.isShowing()) )
+		{
+			try {
+				_dialog_progress.dismiss() ;
+				_dialog_progress = null ;
+			} catch (NullPointerException e) {
+				e.printStackTrace() ;
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace() ;
+			}
+		}
 		
 		if ( nRequestKind == 1 ) {
 			if (output.length() > 0) {
@@ -161,27 +165,33 @@ public class SearchListActivity extends Activity implements AsyncResponse  {
 					            	_temp.descritpion = jObject.getString("description") ;
 					            	_temp.title = jObject.getString("title") ;
 					            	_temp.video = jObject.getString("bun_vid_url") ;
+					            	_temp.b_id = jObject.getString("b_id") ;
+					            	_temp.prices = jObject.getString("price") ;
 					            	
 					            	JSONArray temp = jObject.getJSONArray("videos") ;
 					            	
 					            	String _temp_title = "" ;
 					            	String _temp_images = "" ;
+					            	String _temp_vid = "" ;
 					            	
 					            	for ( int j = 0 ; j < temp.length() ; j++ )
 					            	{
 					            		JSONObject jObject2 = temp.getJSONObject(j) ;
+					            		_temp_vid = _temp_vid + jObject2.getString("v_id") + "^" ;
 					            		
 					            		if ( key.equals(jObject2.getString("v_id")) )
 					            		{
 					            			BunImageArray _item = new BunImageArray(jObject2.getString("vid_title"), "Found in collection " + 
 					            					jObject2.getString("vid_title"), "http://longhairhow2.com/api" + jObject2.getString("vid_image")) ;
 											dataArr.add(_item) ;
+											
 					            		}
 					            		
 					            		_temp_title = _temp_title + jObject2.getString("vid_title") + "^" ;
 					            		_temp_images =  _temp_images + "http://longhairhow2.com/api" + jObject2.getString("vid_image") + "^" ;
 					            	}
 					            	
+					            	_temp.v_ids = _temp_vid ;
 					            	_temp.titles = _temp_title ;
 					            	_temp.images = _temp_images ;
 					            	
@@ -253,6 +263,9 @@ public class SearchListActivity extends Activity implements AsyncResponse  {
 		String title ;
 		String descritpion ;
 		String video ;
+		String b_id ;
+		String v_ids ;
+		String prices ;
 	}
 
 }

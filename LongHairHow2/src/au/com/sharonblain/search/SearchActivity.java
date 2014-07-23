@@ -3,11 +3,10 @@ package au.com.sharonblain.search;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.Date;
 
-import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -62,7 +61,6 @@ public class SearchActivity extends Activity implements AsyncResponse {
 			
 			@Override
 			public boolean onQueryTextChange(String arg0) {
-				// TODO Auto-generated method stub
 				return false;
 			}
 		}) ;
@@ -73,21 +71,16 @@ public class SearchActivity extends Activity implements AsyncResponse {
 	protected void getTagCloud() {
     	
 		nRequestKind = 1 ;
-    	if ( !_dialog_progress.isShowing() )
-    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
-    				"Please wait a sec.", true);
+    	if ( _dialog_progress == null || !_dialog_progress.isShowing() ) {
+    			_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
+        				"Please wait a sec.", true);    		
+    	}
+    		
     	
-    	MultipartEntity params = new MultipartEntity();
-		try {
-			params.addPart("action", new StringBody("/tags/get"));
-			params.addPart("user_id", new StringBody(GlobalVariable.user_id));
-			params.addPart("accessToken", new StringBody(GlobalVariable.accessToken));
-			
-			
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
-		
+    	MultipartEntityBuilder params = MultipartEntityBuilder.create() ;
+		params.addTextBody("action", "/tags/get", ContentType.TEXT_PLAIN);
+		params.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN);
+		params.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN);
 		
 		GlobalVariable.request_url = "http://longhairhow2.com/api/tags/get" ;
 		
@@ -146,8 +139,17 @@ public class SearchActivity extends Activity implements AsyncResponse {
 	
 	@Override
 	public void processFinish(String output) {
-		if ( _dialog_progress.isShowing() )
-			_dialog_progress.dismiss() ;
+		if ( (_dialog_progress != null) && (_dialog_progress.isShowing()) )
+		{
+			try {
+				_dialog_progress.dismiss() ;
+				_dialog_progress = null ;
+			} catch (NullPointerException e) {
+				e.printStackTrace() ;
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace() ;
+			}
+		}
 		
 		if ( nRequestKind == 1 ) {
 			String wordInJSON = "[" ;
@@ -240,20 +242,17 @@ public class SearchActivity extends Activity implements AsyncResponse {
     {
 		nRequestKind = 2 ;
 		
-    	if ( !_dialog_progress.isShowing() )
+    	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
+    	{
     		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
-    				"Getting Access Token... Please wait a sec.", true);
+        				"Getting Access Token... Please wait a sec.", true);    		
+    	}	
     	
     	GlobalVariable.getSydneyTime() ;
     	
-    	MultipartEntity params = null ;
-		try {
-			params = new MultipartEntity();
-			params.addPart("action", new StringBody("/common/access-token/grant"));
-			params.addPart("user_id", new StringBody(GlobalVariable.user_id));
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
+    	MultipartEntityBuilder params = MultipartEntityBuilder.create() ;
+		params.addTextBody("action", "/common/access-token/grant", ContentType.TEXT_PLAIN) ;
+		params.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN) ;
 		
 		GlobalVariable.request_url = "http://longhairhow2.com/api/common/access-token/grant" ;
 		
@@ -305,8 +304,6 @@ public class SearchActivity extends Activity implements AsyncResponse {
           
         webview.getSettings().setJavaScriptEnabled(true); 
         webview.loadDataWithBaseURL("file:///android_asset/", url, "text/html", "UTF-8", null);
-          
-          
     }
      
     @Override

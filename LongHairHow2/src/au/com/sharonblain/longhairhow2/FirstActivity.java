@@ -1,6 +1,6 @@
 package au.com.sharonblain.longhairhow2;
 
-import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
@@ -10,18 +10,28 @@ import android.app.ProgressDialog;
 import android.view.View;
 import android.view.View.OnClickListener;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.StringTokenizer;
 
-import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.FileBody;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -31,15 +41,18 @@ import com.facebook.android.DialogError;
 import com.facebook.android.Facebook;
 import com.facebook.android.Facebook.DialogListener;
 import com.facebook.android.FacebookError;
-import com.squareup.picasso.Picasso;
 
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
 
+import android.util.Base64;
 import android.util.Log;
 import android.util.TypedValue;
 import android.widget.Button;
@@ -61,7 +74,6 @@ public class FirstActivity extends Activity implements AsyncResponse {
     
     private SharedPreferences prefs ;
     
-    
     private String access_token_url = "http://longhairhow2.com/api/common/access-token/grant" ;
     private HttpPostTask httpTask = new HttpPostTask() ;
     private int _request_kind ;
@@ -74,8 +86,104 @@ public class FirstActivity extends Activity implements AsyncResponse {
     private AsyncFacebookRunner mAsyncRunner;
     private SharedPreferences mPrefs;
     
+    private JSONObject profile ;
     
-    	
+    class DownloadFileFromURL extends AsyncTask<String, String, String> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();                
+        }
+
+        @Override
+        protected String doInBackground(String... f_url) {
+            int count;
+            try {
+                URL url = new URL(f_url[0]);
+                URLConnection conection = url.openConnection();
+                conection.connect();
+
+                int lenghtOfFile = conection.getContentLength();
+                InputStream input = new BufferedInputStream(url.openStream(), 8192);
+                OutputStream output = new FileOutputStream(Environment.getExternalStorageDirectory().toString() + "/longhair_temp.jpg");
+
+                byte data[] = new byte[1024];
+                long total = 0;
+
+                while ((count = input.read(data)) != -1) {
+                    total += count;
+                    publishProgress("" + (int) ((total * 100) / lenghtOfFile));
+                    output.write(data, 0, count);
+                }
+
+                output.flush();
+                output.close();
+                input.close();
+
+            } catch (Exception e) {
+                Log.e("Error: ", e.getMessage());
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String file_url) {
+            
+            MultipartEntityBuilder builder = MultipartEntityBuilder.create(); 
+            builder.addTextBody("action", "/user/login", ContentType.TEXT_PLAIN) ;
+			builder.addTextBody("user_id", "-10", ContentType.TEXT_PLAIN);
+			builder.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN);
+			
+			_request_kind = 2 ;
+			
+			try {
+				if (profile.has("email"))
+					builder.addTextBody("email", profile.getString("email"), ContentType.TEXT_PLAIN);
+				if (profile.has("id"))
+					builder.addTextBody("fb_id", profile.getString("id"), ContentType.TEXT_PLAIN);
+				if (profile.has("first_name"))
+					builder.addTextBody("f_name", profile.getString("first_name"), ContentType.TEXT_PLAIN);
+				if (profile.has("last_name"))
+					builder.addTextBody("l_name", profile.getString("last_name"), ContentType.TEXT_PLAIN);
+				if (profile.has("locale"))
+				{
+					StringTokenizer tempStringTokenizer = new StringTokenizer(profile.getString("locale"),"_");
+					String l="", c = "";
+				    if(tempStringTokenizer.hasMoreTokens())
+				    	l = tempStringTokenizer.nextElement().toString();
+				    if(tempStringTokenizer.hasMoreTokens())
+				    	c = tempStringTokenizer.nextElement().toString();
+				    Locale p = new Locale(l,c);
+				    
+				    builder.addTextBody("country", p.getCountry(), ContentType.TEXT_PLAIN);
+				}
+				
+				if (profile.has("gender"))
+					builder.addTextBody("gender", profile.getString("gender"), ContentType.TEXT_PLAIN);
+				if (profile.has("birthday"))
+					builder.addTextBody("dob", profile.getString("birthday"), ContentType.TEXT_PLAIN);
+				else
+					builder.addTextBody("dob", "2000-01-01", ContentType.TEXT_PLAIN);
+				
+				GlobalVariable.request_url = "http://longhairhow2.com/api/user/login" ;
+				GlobalVariable.request_register = 1 ;
+				GlobalVariable.profile_photo_path = Environment.getExternalStorageDirectory().toString() + "/longhair_temp.jpg" ;
+				File file = new File(GlobalVariable.profile_photo_path) ;
+				
+				builder.addPart("profile_pic", new FileBody(file)) ;
+				httpTask = new HttpPostTask() ;
+				httpTask.delegate = FirstActivity.this ;
+				httpTask.execute(builder) ;
+				
+			} catch (JSONException e) {
+				e.printStackTrace();
+				GlobalVariable.f_valid = false ;
+				getAccessToken(false) ;
+			}			
+        }
+    }
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -144,10 +252,13 @@ public class FirstActivity extends Activity implements AsyncResponse {
                 		}
 
 						private void login() {
+							if ( GlobalVariable.user_id == null )
+								GlobalVariable.user_id = "-10" ;
 							
 							if ( Integer.parseInt(GlobalVariable.user_id) > 0 )
 							{
-								Toast.makeText(FirstActivity.this, "You're already signed.", Toast.LENGTH_LONG).show() ;
+								Intent myIntent = new Intent(FirstActivity.this, MainActivity.class);
+								startActivity(myIntent);
 							}
 							else
 							{
@@ -184,11 +295,26 @@ public class FirstActivity extends Activity implements AsyncResponse {
     }
     
     public void loginToFacebook() {
+    	try {
+
+			PackageInfo info = getPackageManager().getPackageInfo(	 "com.example.map_project",	 PackageManager.GET_SIGNATURES);
+			for (Signature signature : info.signatures)
+			{
+				MessageDigest md = MessageDigest.getInstance("SHA");	 md.update(signature.toByteArray());
+				Log.d("KeyHash:", Base64.encodeToString(md.digest(),	 Base64.DEFAULT));
+			}
+
+			} catch (NameNotFoundException e) {
+			} catch (NoSuchAlgorithmException e) {
+		}
     	
-    	if ( GlobalVariable.fb_id != null && Integer.parseInt(GlobalVariable.fb_id) > 0 )
+    	if ( GlobalVariable.fb_id != null && GlobalVariable.fb_id.equals("null") )
     	{
-    		Toast.makeText(FirstActivity.this, "You're already signed with facebook.", Toast.LENGTH_LONG).show() ;
-    		return ;
+    		if ( Integer.parseInt(GlobalVariable.fb_id) > 0 )
+    		{
+    			Toast.makeText(FirstActivity.this, "You're already signed with facebook.", Toast.LENGTH_LONG).show() ;
+        		return ;
+    		}    		
     	}
     	
         mPrefs = getPreferences(MODE_PRIVATE);
@@ -204,7 +330,7 @@ public class FirstActivity extends Activity implements AsyncResponse {
         }
      
         if (!facebook.isSessionValid()) {
-            facebook.authorize(this, new String[] { "email", "publish_stream" }, new DialogListener() {
+            facebook.authorize(FirstActivity.this, new String[] { "email"}, new DialogListener() {
             	@Override
             	public void onCancel() {
             		// Function to handle cancel event
@@ -213,10 +339,12 @@ public class FirstActivity extends Activity implements AsyncResponse {
                 @Override
                 public void onComplete(Bundle values) {
                 	
-                	if ( !_dialog_progress.isShowing() )
-                		_dialog_progress = ProgressDialog.show(FirstActivity.this, "Connecting Facebook...", "Loading profile informations... Please wait a sec.", true);
+                	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
+                	{
+                		_dialog_progress = ProgressDialog.show(FirstActivity.this, "Connecting Facebook...", "Loading profile informations... Please wait a sec.", true);                		
+                	}
                 	
-                    getProfileInformation() ;
+                	getProfileInformation() ;
                 }
                 						
                 @Override
@@ -231,70 +359,52 @@ public class FirstActivity extends Activity implements AsyncResponse {
             });
         }
     }
+        
+    public void logoutFromFacebook() {
+        mAsyncRunner.logout(this, new RequestListener() {
+            @Override
+            public void onComplete(String response, Object state) {
+                Log.d("Logout from Facebook", response);
+                if (Boolean.parseBoolean(response) == true) {
+                    // User successfully Logged out
+                }
+            }
+     
+            @Override
+            public void onIOException(IOException e, Object state) {
+            }
+     
+            @Override
+            public void onFileNotFoundException(FileNotFoundException e,
+                    Object state) {
+            }
+     
+            @Override
+            public void onMalformedURLException(MalformedURLException e,
+                    Object state) {
+            }
+     
+            @Override
+            public void onFacebookError(FacebookError e, Object state) {
+            }
+        });
+    }
     
     public void getProfileInformation() {
         mAsyncRunner.request("me", new RequestListener() {
             @Override
             public void onComplete(String response, Object state) {
-                Log.d("Profile", response);
-                
                 _request_kind = 2 ;
-                
                 String json = response;
                 try {
-                    JSONObject profile = new JSONObject(json);
+                    profile = new JSONObject(json);
                     String url_profile_photo = "https://graph.facebook.com/" + profile.getString("id") + "/picture?type=large" ;
-                    Bitmap _profile_photo = Picasso.with(FirstActivity.this).load(Uri.parse(url_profile_photo)).get() ;
                     
-                    MultipartEntity params = new MultipartEntity() ;
-    				params.addPart("action", new StringBody("/user/login"));
-    				params.addPart("user_id", new StringBody("-10"));
-    				params.addPart("accessToken", new StringBody(GlobalVariable.accessToken));
-    				
-    				if (profile.has("email"))
-    					params.addPart("email", new StringBody(profile.getString("email")));
-    				if (profile.has("id"))
-    					params.addPart("fb_id", new StringBody(profile.getString("id")));
-    				if (profile.has("first_name"))
-    					params.addPart("f_name", new StringBody(profile.getString("first_name")));
-    				if (profile.has("last_name"))
-    					params.addPart("l_name", new StringBody(profile.getString("last_name")));
-    				if (profile.has("locale"))
-    				{
-    					StringTokenizer tempStringTokenizer = new StringTokenizer(profile.getString("locale"),"_");
-    					String l="", c = "";
-    				    if(tempStringTokenizer.hasMoreTokens())
-    				    	l = tempStringTokenizer.nextElement().toString();
-    				    if(tempStringTokenizer.hasMoreTokens())
-    				    	c = tempStringTokenizer.nextElement().toString();
-    				    Locale p = new Locale(l,c);
-    				    
-    					params.addPart("country", new StringBody(p.getCountry()));
-    				}
-    				
-    				if (profile.has("gender"))
-    					params.addPart("gender", new StringBody(profile.getString("gender")));
-    				if (profile.has("birthday"))
-    					params.addPart("dob", new StringBody(profile.getString("birthday")));
-    				
-    				GlobalVariable.request_url = "http://longhairhow2.com/api/user/login" ;
-    				GlobalVariable.request_register = 1 ;
-    				GlobalVariable.photo = _profile_photo ;
-    				
-    				httpTask = new HttpPostTask() ;
-    				httpTask.delegate = FirstActivity.this ;
-    				httpTask.execute(params) ;
-    				
-    				File file = new File(Environment.getExternalStorageDirectory(),  ("longHair_profile.jpg"));
-    			    if(file.exists()){
-    				    file.delete();				    
-    			    }
-     
+                    new DownloadFileFromURL().execute(url_profile_photo);
+                   
                 } catch (JSONException e) {
                     e.printStackTrace();
-                } catch (IOException e) {
-					e.printStackTrace();
-				}
+                } 
             }
             
             @Override
@@ -322,9 +432,10 @@ public class FirstActivity extends Activity implements AsyncResponse {
     
     private void getAccessToken(Boolean _first)
     {
-    	if ( !_dialog_progress.isShowing() )
-    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
-    				"Getting Access Token... Please wait a sec.", true);
+    	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
+    	{
+    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", "Getting Access Token... Please wait a sec.", true);    		
+    	}	
     	
     	if ( !_first )
     	{
@@ -338,20 +449,16 @@ public class FirstActivity extends Activity implements AsyncResponse {
     	String _userid = prefs.getString("user_id", "-10") ;
     	_request_kind = 1 ;
     	
-    	MultipartEntity params = null ;
-		try {
-			params = new MultipartEntity();
-			params.addPart("action", new StringBody("/common/access-token/grant"));
-			params.addPart("user_id", new StringBody(_userid));
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
+    	MultipartEntityBuilder builder = MultipartEntityBuilder.create();    
+    	builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+		builder.addTextBody("action", "/common/access-token/grant", ContentType.TEXT_PLAIN) ;
+		builder.addTextBody("user_id", _userid, ContentType.TEXT_PLAIN) ;
 		
 		GlobalVariable.request_url = access_token_url ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = this;
-		httpTask.execute(params) ;
+		httpTask.execute(builder) ;
     }
     
     private void setAccessToken(JSONObject jsonObj) throws JSONException
@@ -363,10 +470,17 @@ public class FirstActivity extends Activity implements AsyncResponse {
 		GlobalVariable.user_id = result.getString("user_id") ;
     }
     
-    public void processFinish(String output){
+    public void processFinish(String output) throws IllegalArgumentException{
     	
-    	if ( _dialog_progress.isShowing() )
-			_dialog_progress.dismiss() ;
+    	if ( (_dialog_progress != null) && (_dialog_progress.isShowing()) )
+		{
+			try {
+				_dialog_progress.dismiss() ;
+				_dialog_progress = null;
+		    } catch (Exception e) {
+		        e.printStackTrace() ;
+		    }
+		}
     	
     	if ( _request_kind == 1 )		// Get Access Token
     	{
@@ -421,7 +535,10 @@ public class FirstActivity extends Activity implements AsyncResponse {
 
 	    			if (jsonObj.get("type").equals("Success"))
 					{
-	    				JSONObject result = jsonObj.getJSONObject("results") ;
+	    				String _result = jsonObj.getString("results") ;
+	    				JSONArray arr_result = new JSONArray(_result) ;
+	    				JSONObject result = arr_result.getJSONObject(0) ;
+	    				
 	    				GlobalVariable.f_name = result.getString("f_name") ;
 	    				GlobalVariable.l_name = result.getString("l_name") ;
 	    				GlobalVariable.email = result.getString("email") ;

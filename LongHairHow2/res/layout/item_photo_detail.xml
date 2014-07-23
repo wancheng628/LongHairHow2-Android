@@ -12,14 +12,14 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:scaleType="fitXY"
-        android:src="@drawable/sharonlogin12" />
+        android:scaleType="fitXY" />
 
     <TextView
         android:id="@+id/label_photo_purchase"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
+        android:clickable="false"
         android:layout_alignParentTop="true"
         android:alpha="0.8"
         android:background="@drawable/button_background"
@@ -27,7 +27,7 @@
         android:paddingLeft="5dp"
         android:paddingRight="5dp"
         android:paddingTop="3dp"
-        android:text="PURCHASED"
+        android:text="ADD"
         android:textAlignment="center"
         android:textColor="#ffffff" />
 

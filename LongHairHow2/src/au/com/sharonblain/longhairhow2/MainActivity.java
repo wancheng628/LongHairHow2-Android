@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.TabHost;
 import android.widget.TextView;
 import au.com.sharonblain.featured.FeaturedActivity;
+import au.com.sharonblain.request_server.GlobalVariable;
 import au.com.sharonblain.search.SearchActivity;
 import au.com.sharonblain.uservideo.UserVideoActivity;
 
@@ -20,12 +21,17 @@ public class MainActivity extends TabActivity {
 		setContentView(R.layout.main);
 		setTabs() ;
 	}
+	
+	@Override
+	public void onBackPressed() {
+	}
+	
 	private void setTabs()
 	{
-		addTab("Your Videos", R.drawable.tab_video, UserVideoActivity.class);
+		
 		addTab("Featured", R.drawable.tab_featured, FeaturedActivity.class);
 		addTab("Search", R.drawable.tab_search, SearchActivity.class);
-		
+		addTab("Your Videos", R.drawable.tab_video, UserVideoActivity.class);
 		addTab("News", R.drawable.tab_news, FeaturedActivity.class);
 		addTab("More", R.drawable.tab_more, FeaturedActivity.class);
 		
@@ -44,6 +50,8 @@ public class MainActivity extends TabActivity {
 		
 		TextView title = (TextView)tabIndicator.findViewById(R.id.title) ;
 		title.setText(labelId);
+		title.setTypeface(GlobalVariable.tf_medium) ;
+		
 		spec.setIndicator(tabIndicator);
 		spec.setContent(intent);
 		tabHost.addTab(spec);
