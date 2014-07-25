@@ -45,12 +45,12 @@
         android:textColor="#ffffff" />
 
     <ImageView
-        android:id="@+id/imageView1"
+        android:id="@+id/img_sharon"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
-        android:alpha="0.5"
+        android:alpha="0.8"
         android:src="@drawable/play_button" />
 
 </RelativeLayout>

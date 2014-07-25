@@ -76,7 +76,7 @@ public class SearchListActivity extends Activity implements AsyncResponse  {
 		
 		if ( _dialog_progress == null || !_dialog_progress.isShowing() )
 		{
-			_dialog_progress = ProgressDialog.show(SearchListActivity.this, "Connecting Server...", "Please wait a sec.", true);			
+			_dialog_progress = ProgressDialog.show(SearchListActivity.this, "Loading...", "Please wait...", true);			
 		}
     				
     	
@@ -108,8 +108,8 @@ public class SearchListActivity extends Activity implements AsyncResponse  {
 		
     	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
     	{
-    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
-        				"Getting Access Token... Please wait a sec.", true);    		
+    		_dialog_progress = ProgressDialog.show(this, "Loading...", 
+        				"Please wait...", true);    		
     	}	
     	
     	GlobalVariable.getSydneyTime() ;

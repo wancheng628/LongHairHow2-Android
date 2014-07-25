@@ -8,14 +8,24 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.assist.ImageScaleType;
+import com.nostra13.universalimageloader.core.assist.ImageSize;
+import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
+
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.ImageView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 import au.com.sharonblain.longhairhow2.R;
@@ -29,7 +39,7 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
 	private HttpPostTask httpTask = new HttpPostTask() ;
 	private int nRequestKind = 1 ;
 	private String selected_vid_id = "" ;
-	
+	private DisplayImageOptions options;
 	private GridView grid ;
 	
 	public class UserVideoItem {
@@ -65,30 +75,52 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
 					if (jsonObj.get("type").equals("Success"))
 					{
 						JSONArray result = jsonObj.getJSONArray("results") ;
-						videos = new UserVideoItem[result.length()] ;
-						 
+						JSONObject addedVids = new JSONObject() ;
+						JSONArray vids = new JSONArray() ;
 						for ( int i = 0 ; i < result.length() ; i++ )
 						{
-							try {
-								JSONObject vids = result.getJSONObject(i) ;
-								JSONArray vids_array = vids.getJSONArray("vids") ;
-								JSONObject vid = vids_array.getJSONObject(0) ;
+							JSONObject video = result.getJSONObject(i) ;
+							if ( video.has("vids") )
+							{
+								JSONArray temp_vids = video.getJSONArray("vids") ;
 								
-								UserVideoItem temp = new UserVideoItem() ;
-								temp.p_id = vid.getString("p_id") ;
-								temp.v_id = vid.getString("v_id") ;
-								temp.vid_image = "http://longhairhow2.com/api" + vid.getString("vid_image") ;
-								temp.vid_title = vids.getString("title") ;
-								temp.vid_url = "http://longhairhow2.com/api" + vid.getString("vid_url") ;
-							
-								videos[i] = temp ;
-							}catch (JSONException e) {
-								e.printStackTrace();								
-							}
+								for ( int j = 0 ; j < temp_vids.length() ; j++ )
+								{
+									JSONObject vidIn = temp_vids.getJSONObject(j) ;
+									
+									if ( addedVids.has(vidIn.getString("v_id")) == false )
+									{
+										JSONObject newVidDict = new JSONObject(vidIn.toString()) ;
+										if ( video.has("valid_until") )
+											newVidDict.put("valid_until", video.getString("valid_until")) ;
+										else
+											newVidDict.put("valid_until", "") ;
+										
+										vids.put(newVidDict) ;
+										addedVids.put(vidIn.getString("v_id"), vidIn) ;
+									}
+								}
+							}														
 						}
 						
-						VideoAdapter adapter = new VideoAdapter(UserVideoActivity.this, videos) ;
+						this.videos = new UserVideoItem[vids.length()] ;
+						
+						for ( int i = 0 ; i < vids.length() ; i++ )
+						{
+							JSONObject item = vids.getJSONObject(i) ;
+							UserVideoItem temp = new UserVideoItem() ;
+							temp.p_id = item.getString("p_id") ;
+							temp.v_id = item.getString("v_id") ;
+							temp.vid_image = "http://longhairhow2.com/api" + item.getString("vid_image") ;
+							temp.vid_title = item.getString("vid_title") ;
+							temp.vid_url = "http://longhairhow2.com/api" + item.getString("vid_url") ;
+							
+							this.videos[i] = temp ;
+						}
+						
+						VideoAdapter adapter = new VideoAdapter(UserVideoActivity.this, this.videos) ;
 						grid.setAdapter(adapter) ;
+						
 					}
 					else
 					{
@@ -155,7 +187,7 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
 		
     	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
     	{
-    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", "Getting Access Token... Please wait a sec.", true);    		
+    		_dialog_progress = ProgressDialog.show(this, "Loading...", "Please wait...", true);    		
     	}
     				
     	
@@ -172,11 +204,57 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
 		httpTask.execute(builder) ;
     }
 	
+	private void setProfilePhoto() {
+		ImageView imgProfilePhoto = (ImageView)findViewById(R.id.img_profile_photo) ;
+        if ( GlobalVariable.profile_photo_path != null && GlobalVariable.profile_photo_path.length() > 1 )
+        {
+        	options = new DisplayImageOptions.Builder()
+    		.showImageForEmptyUri(R.drawable.default_user_icon)
+    		.showImageOnFail(R.drawable.default_user_icon)
+    		.resetViewBeforeLoading(true)
+    		.cacheOnDisk(true)
+    		.imageScaleType(ImageScaleType.EXACTLY)
+    		.bitmapConfig(Bitmap.Config.RGB_565)
+    		.considerExifParams(true)
+    		.displayer(new FadeInBitmapDisplayer(300))
+    		.build();
+        	
+        	ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(getApplicationContext())
+        	.defaultDisplayImageOptions(options)
+        	.build();
+        	ImageLoader.getInstance().init(config);
+        	ImageSize targetSize = new ImageSize(160, 160);
+        	
+        	if (android.os.Build.VERSION.SDK_INT > 9) {
+        	    StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        	    StrictMode.setThreadPolicy(policy);
+        	}
+        	
+        	Bitmap bmp = ImageLoader.getInstance().loadImageSync("http://longhairhow2.com/api" + GlobalVariable.profile_photo_path, targetSize, options);
+        	imgProfilePhoto.setImageBitmap(GlobalVariable.getCircularBitmap(bmp)) ;
+        	
+        	imgProfilePhoto.getLayoutParams().width = 80 ;
+        	imgProfilePhoto.getLayoutParams().height = 80 ;
+        	
+        	try {
+        		ImageLoader.getInstance().destroy() ;
+        	} catch (NullPointerException e) {
+        		e.printStackTrace() ;
+        	}
+        }
+	}
+	
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState) ;
         setContentView(R.layout.activity_uservideo) ;
         
+        if (android.os.Build.VERSION.SDK_INT > 9) {
+    	    StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+    	    StrictMode.setThreadPolicy(policy);
+    	}
+        
+        setProfilePhoto() ;
         _dialog_progress = new ProgressDialog(UserVideoActivity.this) ;
 		httpTask.delegate = UserVideoActivity.this ;
 		
@@ -207,8 +285,8 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
     	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
     	{
     		try {
-    			_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
-        				"Please wait a sec.", true) ;
+    			_dialog_progress = ProgressDialog.show(this, "Loading...", 
+        				"Please wait...", true) ;
     		}catch (NullPointerException e) {
     			e.printStackTrace() ;
     		}

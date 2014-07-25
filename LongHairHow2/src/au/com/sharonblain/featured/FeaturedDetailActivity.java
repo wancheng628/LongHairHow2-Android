@@ -4,7 +4,6 @@ import java.util.Date;
 
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -52,7 +51,6 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 	private ExpandableHeightGridView grid ;
 	private ImageView btnCart ;
 	private TextView label_cart ;
-	private TextView mTitleTextView ;
 	private TextView mDescriptionTextView ;
 	
 	private String[] arr_images ;
@@ -69,6 +67,24 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 	
 	int total_videos = 0;
 	int nRequestKind = 1 ;
+	
+	@Override
+	protected void onResume() {
+		video.resume();
+	    super.onResume();
+	}
+
+	@Override
+	protected void onPause() {
+		video.suspend();
+	    super.onPause();
+	}
+
+	@Override
+	protected void onDestroy() {
+		video.stopPlayback();
+	    super.onDestroy();
+	}
 	
 	private void getLayoutObjects()
 	{
@@ -116,7 +132,7 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 		LayoutInflater mInflater = LayoutInflater.from(this);
  
         View mCustomView = mInflater.inflate(R.layout.custom_action_bar, null);
-        mTitleTextView = (TextView) mCustomView.findViewById(R.id.title_text);
+        TextView mTitleTextView = (TextView) mCustomView.findViewById(R.id.title_text);
         mTitleTextView.setText(getIntent().getExtras().getString("title")) ;
         mTitleTextView.setTypeface(GlobalVariable.tf_light) ;
  
@@ -143,17 +159,26 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
         	ImageSize targetSize = new ImageSize(160, 160);
         	Bitmap bmp = ImageLoader.getInstance().loadImageSync("http://longhairhow2.com/api" + GlobalVariable.profile_photo_path, targetSize, options);
         	imageButton.setImageBitmap(GlobalVariable.getCircularBitmap(bmp)) ;
-        	
+        	try {
+        		ImageLoader.getInstance().destroy() ;
+        	} catch (NullPointerException e) {
+        		e.printStackTrace() ;
+        	}
         	imageButton.getLayoutParams().width = 80 ;
         	imageButton.getLayoutParams().height = 80 ;
+        	
+        	try {
+        		ImageLoader.getInstance().destroy() ;
+        	} catch (NullPointerException e) {
+        		e.printStackTrace() ;
+        	}
         }
         
         imageButton.setOnClickListener(new OnClickListener() {
  
             @Override
             public void onClick(View view) {
-                Toast.makeText(getApplicationContext(), "Refresh Clicked!",
-                        Toast.LENGTH_LONG).show();
+                
             }
         });
  
@@ -221,15 +246,15 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
         		arr_titles[i] = _temp[1] ;
         }
         
-        JSONArray arrPrice;
+        JSONObject objPrice = null ;
 		try {
-			arrPrice = new JSONArray(price);
+			objPrice = new JSONObject(price);
 			arr_prices = new String[6] ;
 	        
-	        for ( int i = 0 ; i < arrPrice.length() ; i++ )
+	        for ( int i = 1 ; i < 7 ; i++ )
 	        {
-	        	JSONObject obj = (JSONObject)arrPrice.get(i) ;
-	        	arr_prices[i] = obj.getString("price") ;
+	        	JSONObject _temp = new JSONObject(objPrice.getString(String.valueOf(i))) ;
+	        	arr_prices[i-1] = _temp.getString("price") ;
 	        }
 		} catch (JSONException e) {
 			e.printStackTrace();
@@ -287,8 +312,8 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 		nRequestKind = 1 ;
 		if ( _dialog_progress == null || !_dialog_progress.isShowing() )
 		{
-			_dialog_progress = ProgressDialog.show(FeaturedDetailActivity.this, "Connecting Server...", 
-	    				"Please wait a sec.", true);			
+			_dialog_progress = ProgressDialog.show(FeaturedDetailActivity.this, "Loading...", 
+	    				"Please wait...", true);			
 		}	
     	
     	MultipartEntityBuilder builder = MultipartEntityBuilder.create() ;
@@ -327,7 +352,7 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
     	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
     	{
     		try {
-    			_dialog_progress = ProgressDialog.show(this, "Connecting Server...", "Getting Access Token... Please wait a sec.", true);
+    			_dialog_progress = ProgressDialog.show(this, "Loading...", "Please wait...", true);
     		}
     		catch(NullPointerException e) {
     			e.printStackTrace() ;

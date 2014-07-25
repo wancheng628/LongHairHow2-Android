@@ -17,7 +17,7 @@
     </GridView>
 
     <ImageView
-        android:id="@+id/imageView1"
+        android:id="@+id/img_sharon"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:layout_alignParentBottom="false"
@@ -266,9 +266,9 @@
             <TextView
                 android:id="@+id/label_countries"
                 android:layout_width="0dip"
-                android:layout_weight="8"
                 android:layout_height="match_parent"
                 android:layout_gravity="center_vertical|center_horizontal|center"
+                android:layout_weight="8"
                 android:background="#00000000"
                 android:ellipsize="end"
                 android:gravity="center_vertical|center_horizontal"
@@ -276,7 +276,7 @@
                 android:maxLines="1"
                 android:scrollHorizontally="true"
                 android:singleLine="true"
-                android:text="China"
+                android:text="Australia"
                 android:textColor="#ffffff"
                 android:textColorHint="#dddddd" />
 

@@ -132,7 +132,7 @@ public class LoginActivity extends Activity implements AsyncResponse{
     	
     	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
     	{
-    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", "Please wait a sec.", true);    		
+    		_dialog_progress = ProgressDialog.show(this, "Loading...", "Please wait...", true);    		
     	}			
     	
     	MultipartEntityBuilder builder = MultipartEntityBuilder.create() ;

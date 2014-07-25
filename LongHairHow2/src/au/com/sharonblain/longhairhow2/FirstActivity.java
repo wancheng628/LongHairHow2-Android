@@ -341,7 +341,7 @@ public class FirstActivity extends Activity implements AsyncResponse {
                 	
                 	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
                 	{
-                		_dialog_progress = ProgressDialog.show(FirstActivity.this, "Connecting Facebook...", "Loading profile informations... Please wait a sec.", true);                		
+                		_dialog_progress = ProgressDialog.show(FirstActivity.this, "Loading...", "Please wait...", true);                		
                 	}
                 	
                 	getProfileInformation() ;
@@ -434,7 +434,7 @@ public class FirstActivity extends Activity implements AsyncResponse {
     {
     	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
     	{
-    		_dialog_progress = ProgressDialog.show(this, "Connecting Server...", "Getting Access Token... Please wait a sec.", true);    		
+    		_dialog_progress = ProgressDialog.show(this, "Loading...", "Please wait...", true);    		
     	}	
     	
     	if ( !_first )
@@ -494,14 +494,11 @@ public class FirstActivity extends Activity implements AsyncResponse {
     					
     					if ( validity.after(GlobalVariable.cur_sydney_time) )
     					{
-    						Toast.makeText(FirstActivity.this, "Success, Valid - Access token : " + result.getString("accessToken"), Toast.LENGTH_LONG).show() ;
     						GlobalVariable.f_valid = true ;
     						setAccessToken(jsonObj) ;
     					}
     					else
     					{
-    						Toast.makeText(FirstActivity.this, "Date Expired", Toast.LENGTH_LONG).show() ;
-    						
     						GlobalVariable.f_valid = false ;
     						getAccessToken(false) ;
     					}
@@ -509,7 +506,6 @@ public class FirstActivity extends Activity implements AsyncResponse {
     				}
     				else if (jsonObj.get("type").equals("Error"))
     				{
-    					Toast.makeText(FirstActivity.this, "ERROR, Restarting the getAccessToken", Toast.LENGTH_LONG).show() ;
     					GlobalVariable.f_valid = false ;
     					getAccessToken(false) ;
     				}
@@ -590,12 +586,6 @@ public class FirstActivity extends Activity implements AsyncResponse {
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
 
-        // Checks the orientation of the screen
-        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            Toast.makeText(this, "landscape", Toast.LENGTH_SHORT).show();
-        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
-            Toast.makeText(this, "portrait", Toast.LENGTH_SHORT).show();
-        }
     }
 
 }

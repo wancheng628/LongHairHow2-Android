@@ -9,6 +9,7 @@ import android.widget.ImageView;
 import android.widget.TabHost;
 import android.widget.TextView;
 import au.com.sharonblain.featured.FeaturedActivity;
+import au.com.sharonblain.news.NewsActivity;
 import au.com.sharonblain.request_server.GlobalVariable;
 import au.com.sharonblain.search.SearchActivity;
 import au.com.sharonblain.uservideo.UserVideoActivity;
@@ -32,8 +33,8 @@ public class MainActivity extends TabActivity {
 		addTab("Featured", R.drawable.tab_featured, FeaturedActivity.class);
 		addTab("Search", R.drawable.tab_search, SearchActivity.class);
 		addTab("Your Videos", R.drawable.tab_video, UserVideoActivity.class);
-		addTab("News", R.drawable.tab_news, FeaturedActivity.class);
-		addTab("More", R.drawable.tab_more, FeaturedActivity.class);
+		addTab("News", R.drawable.tab_news, NewsActivity.class);
+		addTab("More", R.drawable.tab_more, MoreActivity.class);
 		
 		//To add more tabs just use addTab() method here like previous line.
 	}

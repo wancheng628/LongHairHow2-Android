@@ -31,31 +31,28 @@ public class VideoAdapter extends BaseAdapter {
 		View gridView;
  
 		if (convertView == null) {
- 
-			gridView = new View(context);
- 			gridView = inflater.inflate(R.layout.item_uservideo, null);
- 
- 			TextView title = (TextView) gridView.findViewById(R.id.label_video_title);
-			ImageView photo = (ImageView) gridView.findViewById(R.id.img_video_photo);
-			
-			title.setTypeface(GlobalVariable.tf_light) ;
-			try {
-				title.setText(videoItems[position].vid_title) ;
-				Picasso.with(context).load(Uri.parse(videoItems[position].vid_image)).resize(200, 200).into(photo) ;
-			} catch (NullPointerException ex) { 
-			    System.out.println(String.valueOf(position) + ":" + String.valueOf(videoItems.length)) ; 
-			}
-			
-			int nWidth = parent.getWidth() / 2 ;
-	 		
-			photo.getLayoutParams().width = nWidth ;
-			photo.getLayoutParams().height = nWidth ;
-	 		
-  
+ 			gridView = new View(context);
+ 			gridView = inflater.inflate(R.layout.item_uservideo, parent, false);			
 		} else {
 			gridView = (View) convertView;
 		}
  
+		TextView title = (TextView) gridView.findViewById(R.id.label_video_title);
+		ImageView photo = (ImageView) gridView.findViewById(R.id.img_video_photo);
+		
+		title.setTypeface(GlobalVariable.tf_light) ;
+		try {
+			title.setText(videoItems[position].vid_title) ;
+			Picasso.with(context).load(Uri.parse(videoItems[position].vid_image)).resize(300, 300).into(photo) ;
+		} catch (NullPointerException ex) { 
+		    System.out.println(String.valueOf(position) + ":" + String.valueOf(videoItems.length)) ; 
+		}
+		
+		int nWidth = parent.getWidth() / 2 ;
+ 		
+		photo.getLayoutParams().width = nWidth ;
+		photo.getLayoutParams().height = nWidth ;
+		
 		return gridView;
 	}
  

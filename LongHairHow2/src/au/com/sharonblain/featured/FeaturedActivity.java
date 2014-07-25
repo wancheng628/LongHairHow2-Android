@@ -21,15 +21,15 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.util.Log;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.Switch;
 import android.widget.TextView;
 
 import au.com.sharonblain.longhairhow2.R;
@@ -44,9 +44,7 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 	
 	private ImageView imgProfilePhoto ;
 	private TextView label_type ;
-	private Switch swh_popular ;
 	private GridView grid ;
-	private Boolean f_featured ;
 	private int nRequestKind ;
 	private DisplayImageOptions options;
 	
@@ -54,15 +52,20 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 	private GridAdapter adapter ;
 	private ArrayList<String> v_id, vid_url, vid_title, vid_image ;
 	
+	private Button btn_featured, btn_popular ;
+	
 	private void getLayoutObjects()
 	{
 		imgProfilePhoto = (ImageView)findViewById(R.id.img_profile_photo) ;
         label_type = (TextView)findViewById(R.id.label_type) ;
-        swh_popular = (Switch)findViewById(R.id.switch_popular) ;
         grid = (GridView)findViewById(R.id.grid_photos) ;
         
         label_type.setTypeface(GlobalVariable.tf_light) ;
-        swh_popular.setTypeface(GlobalVariable.tf_medium) ;
+        btn_featured = (Button)findViewById(R.id.btn_featured) ;
+        btn_popular = (Button)findViewById(R.id.btn_popular) ;
+        
+        btn_featured.setTypeface(GlobalVariable.tf_light) ;
+        btn_popular.setTypeface(GlobalVariable.tf_light) ;
 	}
 	
 	@Override
@@ -73,12 +76,35 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
         _dialog_progress = new ProgressDialog(FeaturedActivity.this) ;
         getLayoutObjects() ;
         
+        btn_featured.setSelected(true) ;
+        btn_popular.setSelected(false) ;
+        
         v_id = new ArrayList<String>() ;
         vid_url = new ArrayList<String>() ;
         vid_title = new ArrayList<String>() ;
         vid_image = new ArrayList<String>() ;
         
-        f_featured = swh_popular.isChecked() ;
+        btn_featured.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View arg0) {
+				btn_featured.setSelected(true) ;
+				btn_popular.setSelected(false) ;
+				
+				_sendFeaturedRequest("/front-page/get") ;
+			}
+		}) ;
+        
+        btn_popular.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View arg0) {
+				btn_featured.setSelected(false) ;
+				btn_popular.setSelected(true) ;
+				
+				_sendFeaturedRequest("/popular/get") ;
+			}
+		}) ;
         
         if ( GlobalVariable.profile_photo_path != null && GlobalVariable.profile_photo_path.length() > 1 )
         {
@@ -98,34 +124,24 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
         	.build();
         	ImageLoader.getInstance().init(config);
         	ImageSize targetSize = new ImageSize(160, 160);
+        	
+        	if (android.os.Build.VERSION.SDK_INT > 9) {
+        	    StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        	    StrictMode.setThreadPolicy(policy);
+        	}
+        	
         	Bitmap bmp = ImageLoader.getInstance().loadImageSync("http://longhairhow2.com/api" + GlobalVariable.profile_photo_path, targetSize, options);
         	imgProfilePhoto.setImageBitmap(GlobalVariable.getCircularBitmap(bmp)) ;
         	
         	imgProfilePhoto.getLayoutParams().width = 80 ;
         	imgProfilePhoto.getLayoutParams().height = 80 ;
+        	
+        	try {
+        		ImageLoader.getInstance().destroy() ;
+        	} catch (NullPointerException e) {
+        		e.printStackTrace() ;
+        	}
         }
-        
-        swh_popular.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-			
-			@Override
-			public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
-				if ( arg1 )
-				{
-					label_type.setText("Popular") ;
-					f_featured = false ;	
-					_sendFeaturedRequest("/popular/get") ;
-					
-				}
-				else
-				{
-					label_type.setText("Featured") ;
-					f_featured = true ;	
-					_sendFeaturedRequest("/front-page/get") ;
-				}
-				
-				Log.d("Featured", String.valueOf(f_featured)) ;
-			}
-		}) ;
         
         _sendFeaturedRequest("/front-page/get") ;
         
@@ -166,8 +182,8 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 		
 		if ( _dialog_progress == null || !_dialog_progress.isShowing() )
 		{
-			_dialog_progress = ProgressDialog.show(this, "Connecting Server...", 
-	    				"Please wait a sec.", true);			
+			_dialog_progress = ProgressDialog.show(this, "Loading...", 
+	    				"Please wait...", true);			
 		}	
     	
     	MultipartEntityBuilder builder = MultipartEntityBuilder.create();
@@ -265,8 +281,7 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 				}
 			} else {
 				Log.e("ServiceHandler", "Couldn't get any data from the url") ;	
-				getAccessToken() ;
-				
+				getAccessToken() ;				
 			}
 		}
 		else
@@ -323,7 +338,7 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
     	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
     	{
     		try {
-    			_dialog_progress = ProgressDialog.show(this, "Connecting Server...", "Getting Access Token... Please wait a sec.", true);
+    			_dialog_progress = ProgressDialog.show(this, "Loading...", "Please wait...", true);
     		}
     		catch(NullPointerException e) {
     			e.printStackTrace() ;

@@ -10,6 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -87,8 +88,14 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 	
 	private String birthday = "", country = "", gender = "" ;
 	private File photo_file ;
+	private int nRequestKind = 1 ;
 	
-	
+	TextView txtEmail ;
+    TextView txtDesirePass ;
+    TextView txtRepeatPass ;
+    TextView txtFirstName ;
+    TextView txtLastName ;
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -119,11 +126,11 @@ public class RegisterActivity extends Activity implements AsyncResponse{
         final LinearLayout layout_gender = (LinearLayout)findViewById(R.id.layout_gender) ;
         final LinearLayout layout_next = (LinearLayout)findViewById(R.id.layout_nextbutton) ;
         
-        final TextView txtEmail = (TextView)findViewById(R.id.txtEmail) ;
-        final TextView txtDesirePass = (TextView)findViewById(R.id.txtDesirePass) ;
-        final TextView txtRepeatPass = (TextView)findViewById(R.id.txtRepeatPass) ;
-        final TextView txtFirstName = (TextView)findViewById(R.id.txtFirstName) ;
-        final TextView txtLastName = (TextView)findViewById(R.id.txtLastName) ;
+        txtEmail = (TextView)findViewById(R.id.txtEmail) ;
+        txtDesirePass = (TextView)findViewById(R.id.txtDesirePass) ;
+        txtRepeatPass = (TextView)findViewById(R.id.txtRepeatPass) ;
+        txtFirstName = (TextView)findViewById(R.id.txtFirstName) ;
+        txtLastName = (TextView)findViewById(R.id.txtLastName) ;
         
         txtEmail.setTypeface(GlobalVariable.tf_medium) ;
         txtDesirePass.setTypeface(GlobalVariable.tf_medium) ;
@@ -284,14 +291,6 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 				{
 					Toast.makeText(RegisterActivity.this, "Please input the first name", Toast.LENGTH_LONG).show() ;
 				}
-				else if ( label_dob.getText().toString().equals("YYYY/MM/DD") )
-				{
-					Toast.makeText(RegisterActivity.this, "Please select your birthday", Toast.LENGTH_LONG).show() ;
-				}
-				else if ( label_gender.getText().toString().equals("Male or Female") )
-				{
-					Toast.makeText(RegisterActivity.this, "Please select your gender", Toast.LENGTH_LONG).show() ;
-				}
 				else
 				{
 					nStep = 2 ;
@@ -418,34 +417,80 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 				
 				if ( _dialog_progress == null || !_dialog_progress.isShowing() )
 				{
-					_dialog_progress = ProgressDialog.show(RegisterActivity.this, "Connecting Server...", 
-			    				"Please wait a sec.", true);					
+					_dialog_progress = ProgressDialog.show(RegisterActivity.this, "Loading...", 
+			    				"Please wait...", true);					
 				}
 				
-				MultipartEntityBuilder builder = MultipartEntityBuilder.create() ;
-				builder.addTextBody("action", "/user/register", ContentType.TEXT_PLAIN) ;
-				builder.addTextBody("user_id", "-10", ContentType.TEXT_PLAIN);
-				builder.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN);
-				builder.addTextBody("email", txtEmail.getText().toString(), ContentType.TEXT_PLAIN);
-				builder.addTextBody("pwd", md5(txtDesirePass.getText().toString()), ContentType.TEXT_PLAIN);
-				builder.addTextBody("f_name", txtFirstName.getText().toString(), ContentType.TEXT_PLAIN);
-				builder.addTextBody("l_name", txtLastName.getText().toString(), ContentType.TEXT_PLAIN);
-				builder.addTextBody("country", label_country.getText().toString(), ContentType.TEXT_PLAIN);
-				builder.addTextBody("gender", gender, ContentType.TEXT_PLAIN);
-				builder.addTextBody("dob", birthday, ContentType.TEXT_PLAIN);
-				builder.addPart("profile_pic", new FileBody(photo_file)) ;
-								
-				GlobalVariable.request_url = "http://longhairhow2.com/api/user/register" ;
-				GlobalVariable.request_register = 1 ;
-				
-				httpTask = new HttpPostTask() ;
-				httpTask.delegate = RegisterActivity.this ;
-				httpTask.execute(builder) ;
-				
+				if ( GlobalVariable.accessToken == null || GlobalVariable.accessToken.length() < 1 )
+				{
+					getAccessToken() ;					
+				}
+				else
+				{
+					Register() ;
+				}
 			}
 		}) ;
     }
     
+    private void Register() {
+    	
+    	MultipartEntityBuilder builder = MultipartEntityBuilder.create() ;
+		builder.addTextBody("action", "/user/register", ContentType.TEXT_PLAIN) ;
+		builder.addTextBody("user_id", "-10", ContentType.TEXT_PLAIN);
+		
+    	builder.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN);
+		builder.addTextBody("email", txtEmail.getText().toString(), ContentType.TEXT_PLAIN);
+		builder.addTextBody("pwd", md5(txtDesirePass.getText().toString()), ContentType.TEXT_PLAIN);
+		builder.addTextBody("f_name", txtFirstName.getText().toString(), ContentType.TEXT_PLAIN);
+		builder.addTextBody("l_name", txtLastName.getText().toString(), ContentType.TEXT_PLAIN);
+		builder.addTextBody("country", label_country.getText().toString(), ContentType.TEXT_PLAIN);
+		builder.addTextBody("gender", gender, ContentType.TEXT_PLAIN);
+		builder.addTextBody("dob", birthday, ContentType.TEXT_PLAIN);
+		
+		//photo_file = new File(Environment.getExternalStorageDirectory(), "longHair_profile.jpg");
+		if ( photo_file != null && photo_file.exists() )
+			builder.addPart("profile_pic", new FileBody(photo_file)) ;
+						
+		GlobalVariable.request_url = "http://longhairhow2.com/api/user/register" ;
+		GlobalVariable.request_register = 1 ;
+		
+		httpTask = new HttpPostTask() ;
+		httpTask.delegate = RegisterActivity.this ;
+		httpTask.execute(builder) ;
+    }
+    
+    private void setAccessToken(JSONObject jsonObj) throws JSONException
+    {
+    	JSONObject result = jsonObj.getJSONObject("results") ;
+		
+		GlobalVariable.accessToken = result.getString("accessToken") ;
+		GlobalVariable.validity = result.getString("validity") ;
+		GlobalVariable.user_id = result.getString("user_id") ;
+    }
+	
+	private void getAccessToken()
+    {
+		nRequestKind = 2 ;
+		
+    	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
+    	{
+    		_dialog_progress = ProgressDialog.show(this, "Loading...", "Please wait...", true);    		
+    	}
+    	
+    	GlobalVariable.getSydneyTime() ;
+    	
+    	MultipartEntityBuilder builder = MultipartEntityBuilder.create() ;
+    	builder.addTextBody("action", "/common/access-token/grant", ContentType.TEXT_PLAIN);
+    	builder.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN);
+		
+		GlobalVariable.request_url = "http://longhairhow2.com/api/common/access-token/grant" ;
+		
+		httpTask = new HttpPostTask() ;
+		httpTask.delegate = this;
+		httpTask.execute(builder) ;
+    }
+	
     public static final String md5(final String s) {
         final String MD5 = "MD5";
         try {
@@ -489,7 +534,7 @@ public class RegisterActivity extends Activity implements AsyncResponse{
     	if (resultCode == RESULT_OK) {
 	        if (requestCode == 111) {  
 	            try {
-	            	photo_file = new File(Environment.getExternalStorageDirectory(),  ("longHair_profile.jpg"));
+	            	photo_file = new File(Environment.getExternalStorageDirectory(), "longHair_profile.jpg");
 	            	profile_photo = Media.getBitmap(getContentResolver(), Uri.fromFile(photo_file) );
 	            	profile_photo = Bitmap.createScaledBitmap(profile_photo, 150, 200, true);
 	            	imgPhoto.setImageBitmap(profile_photo);
@@ -511,9 +556,12 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 					e.printStackTrace();
 				}
 	            
-				profile_photo = BitmapFactory.decodeStream(imageStream);
-				profile_photo = Bitmap.createScaledBitmap(profile_photo, 150, 200, true);
-	            imgPhoto.setImageBitmap(profile_photo);
+				if ( imageStream != null )
+				{
+					profile_photo = BitmapFactory.decodeStream(imageStream);
+					profile_photo = Bitmap.createScaledBitmap(profile_photo, 150, 200, true);
+		            imgPhoto.setImageBitmap(profile_photo);
+				}				
 	        }
     	}
     }
@@ -579,29 +627,70 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 		    }
 		}
 		
-		if (output.length() > 0) {
+		if ( nRequestKind == 1 )
+		{
+			if (output.length() > 0) {
+				try {
+					JSONObject jsonObj = new JSONObject(output) ;
+					if (jsonObj.get("type").equals("Success"))
+					{
+						//Register() ;
+						Intent intent = new Intent(RegisterActivity.this, LoginActivity.class) ;
+						startActivity(intent) ;
+						finish() ;
+						
+						Toast.makeText(RegisterActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+					}
+					else
+					{
+						Toast.makeText(RegisterActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+					}
+				
+				} catch (JSONException e) {
+					e.printStackTrace();					
+				}
+			} else {
+				Toast.makeText(RegisterActivity.this, "Couldn't get any data from the url", Toast.LENGTH_LONG).show() ;			
+			}		
+			
+			GlobalVariable.tempBirthday = "" ;
+			GlobalVariable.tempCountry = "" ;
+			GlobalVariable.tempGender = "" ;
+			finish() ;
+		}
+		else if ( nRequestKind == 2 ){
 			try {
 				JSONObject jsonObj = new JSONObject(output) ;
 				if (jsonObj.get("type").equals("Success"))
 				{
-					Toast.makeText(RegisterActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+					JSONObject result = jsonObj.getJSONObject("results") ;
+					Date validity = GlobalVariable.getDateFromString(result.getString("validity")) ;
+					
+					if ( validity.after(GlobalVariable.cur_sydney_time) )
+					{
+						GlobalVariable.f_valid = true ;
+						setAccessToken(jsonObj) ;
+					}
+					else
+					{
+						GlobalVariable.f_valid = false ;
+						getAccessToken() ;
+					}
+						
 				}
-				else
+				else if (jsonObj.get("type").equals("Error"))
 				{
-					Toast.makeText(RegisterActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+					GlobalVariable.f_valid = false ;
+					getAccessToken() ;
 				}
 			
 			} catch (JSONException e) {
 				e.printStackTrace();
-				
+				GlobalVariable.f_valid = false ;
+				getAccessToken() ;
 			}
-		} else {
-			Toast.makeText(RegisterActivity.this, "Couldn't get any data from the url", Toast.LENGTH_LONG).show() ;			
-		}		
+		}
 		
-		GlobalVariable.tempBirthday = "" ;
-		GlobalVariable.tempCountry = "" ;
-		GlobalVariable.tempGender = "" ;
-		finish() ;
+		
 	}
 }

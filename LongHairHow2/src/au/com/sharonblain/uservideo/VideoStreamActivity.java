@@ -1,6 +1,7 @@
 package au.com.sharonblain.uservideo;
 
 import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnErrorListener;
 import android.media.MediaPlayer.OnPreparedListener;
 import android.net.Uri;
 import android.os.Bundle;
@@ -17,6 +18,24 @@ public class VideoStreamActivity extends Activity{
 	private VideoView videoview;
 	private int position = 0;
 	private MediaController mediaControls;
+	
+	@Override
+	protected void onResume() {
+		videoview.resume();
+	    super.onResume();
+	}
+
+	@Override
+	protected void onPause() {
+		videoview.suspend();
+	    super.onPause();
+	}
+
+	@Override
+	protected void onDestroy() {
+		videoview.stopPlayback();
+	    super.onDestroy();
+	}
 	
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +88,24 @@ public class VideoStreamActivity extends Activity{
                 }
             }
         });
+        
+        videoview.setOnErrorListener(new OnErrorListener() {
+			
+			@Override
+			public boolean onError(MediaPlayer arg0, int arg1, int arg2) {
+				if ( (pDialog != null) && (pDialog.isShowing()) )
+        		{
+        			try {
+        				pDialog.dismiss();
+        			} catch (NullPointerException e) {
+        				e.printStackTrace() ;
+        			} catch (IllegalArgumentException e) {
+        				e.printStackTrace() ;
+        			}
+        		}
+				return false;
+			}
+		}) ;
 	}
 	
 	@Override
