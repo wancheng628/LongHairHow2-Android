@@ -6,11 +6,11 @@ import java.io.InputStreamReader;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.WebView;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -22,6 +22,8 @@ public class ExpandableListAdapter extends BaseExpandableListAdapter {
  
     private Activity context;
     NewsItem[] news ;
+    String htmlString ;
+    TouchyWebView webview ;
     
     public ExpandableListAdapter(Activity context, NewsItem[] news) {
         this.context = context ;
@@ -38,23 +40,29 @@ public class ExpandableListAdapter extends BaseExpandableListAdapter {
      
     public View getChildView(final int groupPosition, final int childPosition,
             boolean isLastChild, View convertView, ViewGroup parent) {
-        LayoutInflater inflater = context.getLayoutInflater();
          
-        if (convertView == null) {
-            convertView = inflater.inflate(R.layout.item_news_child, null);
-        }
+        View gridView;
         
-        WebView webview = (WebView)convertView.findViewById(R.id.webView1) ;
+        if (convertView == null) {
+        	LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        	gridView = inflater.inflate(R.layout.item_news_child, null) ;
+        }
+        else
+	    {
+			gridView = (View)convertView;
+	    }
+        
+        webview = (TouchyWebView)gridView.findViewById(R.id.webView1) ;
         webview.clearFormData() ;
-        String htmlString = getAssetsContent() ;
+        htmlString = getAssetsContent() ;
         htmlString = htmlString.replace("INSERT-BLOG-CONTENT-HERE", news[groupPosition].getBody()) ;
         htmlString = htmlString.replace("INSERT-BLOG-TITLE-HERE", news[groupPosition].getTitle()) ;
         webview.getSettings().setJavaScriptEnabled(true);
-        webview.loadData(htmlString, "text/html; charset=utf-8", "UTF-8");
+        webview.loadDataWithBaseURL("file:///android_asset/", htmlString, "text/html", "UTF-8", null);
         
-        return convertView;
+        return gridView;
     }
- 
+     
     @SuppressWarnings("deprecation")
 	private String getAssetsContent()
 	{
@@ -104,7 +112,7 @@ public class ExpandableListAdapter extends BaseExpandableListAdapter {
     public long getGroupId(int groupPosition) {
         return groupPosition;
     }
- 
+     
     public View getGroupView(int groupPosition, boolean isExpanded,
             View convertView, ViewGroup parent) {
         

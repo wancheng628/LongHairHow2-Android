@@ -1,7 +1,10 @@
 package au.com.sharonblain.request_server;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -20,6 +23,7 @@ import android.graphics.PorterDuff.Mode;
 public class GlobalVariable extends Application {
     private static GlobalVariable singleton ;
     public static String request_url ;			// For HttpPostTask class's url
+    public static String API_URL = "http://longhairhow2.com/api" ;
     
     public static String accessToken ;
     public static String validity ;
@@ -44,6 +48,32 @@ public class GlobalVariable extends Application {
     public static Date cur_sydney_time ;
     public static Typeface tf_light ;
     public static Typeface tf_medium ;
+    public static ArrayList<String> purchasedVideos ;
+    
+    public static final String md5(final String s) {
+        final String MD5 = "MD5";
+        try {
+            // Create MD5 Hash
+            MessageDigest digest = java.security.MessageDigest
+                    .getInstance(MD5);
+            digest.update(s.getBytes());
+            byte messageDigest[] = digest.digest();
+
+            // Create Hex String
+            StringBuilder hexString = new StringBuilder();
+            for (byte aMessageDigest : messageDigest) {
+                String h = Integer.toHexString(0xFF & aMessageDigest);
+                while (h.length() < 2)
+                    h = "0" + h;
+                hexString.append(h);
+            }
+            return hexString.toString();
+
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
     
     @SuppressLint("SimpleDateFormat")
 	public static Date getDateFromString(String str_date)

@@ -10,18 +10,31 @@ import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.nostra13.universalimageloader.core.DisplayImageOptions;
+import com.nostra13.universalimageloader.core.ImageLoader;
+import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
+import com.nostra13.universalimageloader.core.assist.ImageScaleType;
+import com.nostra13.universalimageloader.core.assist.ImageSize;
+import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.ImageView;
 import android.widget.SearchView;
 import android.widget.SearchView.OnQueryTextListener;
 import android.widget.Toast;
+import au.com.sharonblain.longhairhow2.ProfileActivity;
 import au.com.sharonblain.longhairhow2.R;
 import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
@@ -36,6 +49,7 @@ public class SearchActivity extends Activity implements AsyncResponse {
 	private HttpPostTask httpTask = new HttpPostTask() ;
 	private String htmlString ;
 	private int nRequestKind ;
+	private DisplayImageOptions options;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -66,8 +80,54 @@ public class SearchActivity extends Activity implements AsyncResponse {
 		}) ;
 		
 		getTagCloud() ;
+		setProfilePhoto() ;
+		
 	}
-
+	
+	private void setProfilePhoto()
+	{
+		ImageView imgProfilePhoto = (ImageView)findViewById(R.id.img_profile_photo);
+        
+        if ( GlobalVariable.profile_photo_path != null && GlobalVariable.profile_photo_path.length() > 1 && !GlobalVariable.profile_photo_path.equals("/user/images/") )
+        {
+        	options = new DisplayImageOptions.Builder()
+    		.showImageForEmptyUri(R.drawable.default_user_icon)
+    		.showImageOnFail(R.drawable.default_user_icon)
+    		.resetViewBeforeLoading(true)
+    		.cacheOnDisk(true)
+    		.imageScaleType(ImageScaleType.EXACTLY)
+    		.bitmapConfig(Bitmap.Config.RGB_565)
+    		.considerExifParams(true)
+    		.displayer(new FadeInBitmapDisplayer(300))
+    		.build();
+        	
+        	ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(getApplicationContext())
+        	.defaultDisplayImageOptions(options)
+        	.build();
+        	ImageLoader.getInstance().init(config);
+        	ImageSize targetSize = new ImageSize(160, 160);
+        	Bitmap bmp = ImageLoader.getInstance().loadImageSync(GlobalVariable.API_URL + GlobalVariable.profile_photo_path, targetSize, options);
+        	imgProfilePhoto.setImageBitmap(GlobalVariable.getCircularBitmap(bmp)) ;
+        	try {
+        		ImageLoader.getInstance().destroy() ;
+        	} catch (NullPointerException e) {
+        		e.printStackTrace() ;
+        	}
+        	        	
+        }
+        
+        imgProfilePhoto.setOnClickListener(new OnClickListener() {
+ 
+            @Override
+            public void onClick(View view) {
+            	Intent intent = new Intent(SearchActivity.this, ProfileActivity.class) ;
+				startActivity(intent) ;
+            }
+        });
+ 
+        
+	}
+	
 	protected void getTagCloud() {
     	
 		nRequestKind = 1 ;
@@ -82,7 +142,7 @@ public class SearchActivity extends Activity implements AsyncResponse {
 		params.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN);
 		params.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN);
 		
-		GlobalVariable.request_url = "http://longhairhow2.com/api/tags/get" ;
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/tags/get" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = SearchActivity.this ;
@@ -189,7 +249,7 @@ public class SearchActivity extends Activity implements AsyncResponse {
 					
 				}
 			} else {
-				Log.e("ServiceHandler", "Couldn't get any data from the url") ;
+				Log.e("ServiceHandler", "Couldn't get any data from the server.") ;
 				
 			}
 		}
@@ -254,7 +314,7 @@ public class SearchActivity extends Activity implements AsyncResponse {
 		params.addTextBody("action", "/common/access-token/grant", ContentType.TEXT_PLAIN) ;
 		params.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN) ;
 		
-		GlobalVariable.request_url = "http://longhairhow2.com/api/common/access-token/grant" ;
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/common/access-token/grant" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = this;
@@ -311,8 +371,7 @@ public class SearchActivity extends Activity implements AsyncResponse {
         if(webview.canGoBack()) {
             webview.loadDataWithBaseURL("file:///android_asset/", htmlString, "text/html", "UTF-8", null);
         } else {
-            // Let the system handle the back button
-            super.onBackPressed();
+            
         }
     }
 }

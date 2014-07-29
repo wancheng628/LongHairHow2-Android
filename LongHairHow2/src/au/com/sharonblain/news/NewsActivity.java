@@ -15,18 +15,22 @@ import com.nostra13.universalimageloader.core.assist.ImageScaleType;
 import com.nostra13.universalimageloader.core.assist.ImageSize;
 import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.OnGroupExpandListener;
 import android.widget.ImageView;
 
+import au.com.sharonblain.longhairhow2.ProfileActivity;
 import au.com.sharonblain.longhairhow2.R;
 import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
@@ -41,6 +45,11 @@ public class NewsActivity extends Activity implements AsyncResponse{
 	private NewsItem[] news ;
 	private ExpandableListView list_news ;
 	private int lastExpandedPosition = -1;
+	
+	@Override
+	public void onBackPressed() {
+		
+	}
 	
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,12 +83,37 @@ public class NewsActivity extends Activity implements AsyncResponse{
                 			img_check.setImageDrawable(getResources().getDrawable(R.drawable.unchecked)) ;
                 	}
                 }
+                
                 lastExpandedPosition = groupPosition;
-                list_news.smoothScrollToPosition(lastExpandedPosition) ;
+                //list_news.smoothScrollToPosition(lastExpandedPosition) ;
             }
         });
+        
+        setListIndicator() ;
 	}
 
+	@Override
+	public void onWindowFocusChanged(boolean hasFocus) {
+	    super.onWindowFocusChanged(hasFocus);
+	    setListIndicator() ;	    
+	}
+	
+	@SuppressLint("NewApi")
+	public void setListIndicator()
+	{
+		DisplayMetrics metrics = new DisplayMetrics();
+	    getWindowManager().getDefaultDisplay().getMetrics(metrics);
+	    int width = metrics.widthPixels; 
+        list_news.setIndicatorBounds(width - GetPixelFromDips(50), width - GetPixelFromDips(10));  
+        
+	    if(android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
+	    	list_news.setIndicatorBounds(width-GetPixelFromDips(35), width-GetPixelFromDips(5));
+
+	    } else {
+	    	list_news.setIndicatorBoundsRelative(width-GetPixelFromDips(35), width-GetPixelFromDips(5));
+	    }
+	}
+	
 	@Override
 	public void processFinish(String output) throws IllegalArgumentException {
 		httpTask.delegate = NewsActivity.this ;
@@ -112,12 +146,12 @@ public class NewsActivity extends Activity implements AsyncResponse{
 							news[i] = item ;
 						}
 						
-						DisplayMetrics metrics = new DisplayMetrics();
-					    getWindowManager().getDefaultDisplay().getMetrics(metrics);
-					    int width = metrics.widthPixels; 
-					    
 						final ExpandableListAdapter expListAdapter = new ExpandableListAdapter(NewsActivity.this, news) ;
 				        list_news.setAdapter(expListAdapter);
+				        
+				        DisplayMetrics metrics = new DisplayMetrics();
+					    getWindowManager().getDefaultDisplay().getMetrics(metrics);
+					    int width = metrics.widthPixels; 
 				        list_news.setIndicatorBounds(width - GetPixelFromDips(50), width - GetPixelFromDips(10));  
 
 					}
@@ -131,7 +165,7 @@ public class NewsActivity extends Activity implements AsyncResponse{
 					getAccessToken() ;
 				}
 			} else {
-				Log.e("ServiceHandler", "Couldn't get any data from the url") ;	
+				Log.e("ServiceHandler", "Couldn't get any data from the server.") ;	
 				getAccessToken() ;				
 			}
 		}
@@ -197,7 +231,7 @@ public class NewsActivity extends Activity implements AsyncResponse{
 		if ( GlobalVariable.accessToken != null )
 			builder.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN);
 		
-		GlobalVariable.request_url = "http://longhairhow2.com/api/blog/getAll" ;
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/blog/getAll" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = NewsActivity.this ;
@@ -232,7 +266,7 @@ public class NewsActivity extends Activity implements AsyncResponse{
 		params.addTextBody("action", "/common/access-token/grant", ContentType.TEXT_PLAIN);
 		params.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN);
 		
-		GlobalVariable.request_url = "http://longhairhow2.com/api/common/access-token/grant" ;
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/common/access-token/grant" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = this;
@@ -241,7 +275,7 @@ public class NewsActivity extends Activity implements AsyncResponse{
 	
 	private void setProfilePhoto() {
 		ImageView imgProfilePhoto = (ImageView)findViewById(R.id.img_profile_photo) ;
-        if ( GlobalVariable.profile_photo_path != null && GlobalVariable.profile_photo_path.length() > 1 )
+        if ( GlobalVariable.profile_photo_path != null && GlobalVariable.profile_photo_path.length() > 1  && !GlobalVariable.profile_photo_path.equals("/user/images/"))
         {
         	options = new DisplayImageOptions.Builder()
     		.showImageForEmptyUri(R.drawable.default_user_icon)
@@ -265,11 +299,8 @@ public class NewsActivity extends Activity implements AsyncResponse{
         	    StrictMode.setThreadPolicy(policy);
         	}
         	
-        	Bitmap bmp = ImageLoader.getInstance().loadImageSync("http://longhairhow2.com/api" + GlobalVariable.profile_photo_path, targetSize, options);
+        	Bitmap bmp = ImageLoader.getInstance().loadImageSync(GlobalVariable.API_URL + GlobalVariable.profile_photo_path, targetSize, options);
         	imgProfilePhoto.setImageBitmap(GlobalVariable.getCircularBitmap(bmp)) ;
-        	
-        	imgProfilePhoto.getLayoutParams().width = 80 ;
-        	imgProfilePhoto.getLayoutParams().height = 80 ;
         	
         	try {
         		ImageLoader.getInstance().destroy() ;
@@ -277,5 +308,14 @@ public class NewsActivity extends Activity implements AsyncResponse{
         		e.printStackTrace() ;
         	}
         }
+        
+        imgProfilePhoto.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				Intent intent = new Intent(NewsActivity.this, ProfileActivity.class) ;
+				startActivity(intent) ;
+			}
+		}) ;
 	}
 }

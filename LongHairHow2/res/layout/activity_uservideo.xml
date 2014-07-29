@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#ffffff"
     android:orientation="vertical" >
 
     <RelativeLayout
         android:id="@+id/relativeLayout1"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
         android:background="#ffffff" >
@@ -19,6 +20,7 @@
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true"
             android:text="Your Videos"
+            android:textColor="#000000"
             android:textSize="24sp" />
 
         <ImageView
@@ -27,7 +29,7 @@
             android:layout_height="50dp"
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
-            android:layout_marginRight="20dp"
+            android:layout_marginRight="10dp"
             android:src="@drawable/default_user_icon" />
     </RelativeLayout>
     
@@ -35,11 +37,30 @@
         android:id="@+id/grid1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="20dp"
+        android:layout_below="@id/relativeLayout1"
+        android:layout_marginBottom="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="5dp"
         android:horizontalSpacing="10dp"
         android:numColumns="2"
         android:verticalSpacing="10dp" >
 
     </GridView>
 
-</LinearLayout>
+    <TextView
+        android:id="@+id/label_novideo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerInParent="true"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="30dp"
+        android:layout_marginRight="30dp"
+        android:gravity="center_horizontal"
+        android:text="You are yet to purchase any videos.\n\nTap Featured or Search to browse our amazing library of styling videos."
+        android:textColor="#000000"
+        android:textSize="22sp"
+        android:visibility="gone" />
+
+</RelativeLayout>

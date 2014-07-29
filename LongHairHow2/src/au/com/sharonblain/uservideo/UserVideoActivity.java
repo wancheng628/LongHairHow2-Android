@@ -23,11 +23,14 @@ import android.os.Bundle;
 import android.os.StrictMode;
 import android.util.Log;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
+import au.com.sharonblain.longhairhow2.ProfileActivity;
 import au.com.sharonblain.longhairhow2.R;
 import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
@@ -41,6 +44,7 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
 	private String selected_vid_id = "" ;
 	private DisplayImageOptions options;
 	private GridView grid ;
+	private TextView label_novideo ;
 	
 	public class UserVideoItem {
 		
@@ -53,6 +57,10 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
 	}
 	
 	private UserVideoItem[] videos ;
+	
+	@Override
+	public void onBackPressed() {
+	}
 	
 	@Override
 	public void processFinish(String output) {
@@ -111,15 +119,26 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
 							UserVideoItem temp = new UserVideoItem() ;
 							temp.p_id = item.getString("p_id") ;
 							temp.v_id = item.getString("v_id") ;
-							temp.vid_image = "http://longhairhow2.com/api" + item.getString("vid_image") ;
+							temp.vid_image = GlobalVariable.API_URL + item.getString("vid_image") ;
 							temp.vid_title = item.getString("vid_title") ;
-							temp.vid_url = "http://longhairhow2.com/api" + item.getString("vid_url") ;
+							temp.vid_url = GlobalVariable.API_URL + item.getString("vid_url") ;
 							
 							this.videos[i] = temp ;
 						}
 						
-						VideoAdapter adapter = new VideoAdapter(UserVideoActivity.this, this.videos) ;
-						grid.setAdapter(adapter) ;
+						if ( this.videos.length < 1 )
+						{
+							label_novideo.setVisibility(View.VISIBLE) ;
+							label_novideo.setTypeface(GlobalVariable.tf_medium) ;
+							grid.setVisibility(View.GONE) ;
+						}
+						else
+						{
+							label_novideo.setVisibility(View.GONE) ;
+							grid.setVisibility(View.VISIBLE) ;
+							VideoAdapter adapter = new VideoAdapter(UserVideoActivity.this, this.videos) ;
+							grid.setAdapter(adapter) ;
+						}
 						
 					}
 					else
@@ -133,7 +152,7 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
 					
 				}
 			} else {
-				Log.e("ServiceHandler", "Couldn't get any data from the url") ;
+				Log.e("ServiceHandler", "Couldn't get any data from the server.") ;
 				
 			}
 		}
@@ -197,7 +216,7 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
     	builder.addTextBody("action", "/common/access-token/grant", ContentType.TEXT_PLAIN);
     	builder.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN);
 		
-		GlobalVariable.request_url = "http://longhairhow2.com/api/common/access-token/grant" ;
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/common/access-token/grant" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = this;
@@ -206,7 +225,7 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
 	
 	private void setProfilePhoto() {
 		ImageView imgProfilePhoto = (ImageView)findViewById(R.id.img_profile_photo) ;
-        if ( GlobalVariable.profile_photo_path != null && GlobalVariable.profile_photo_path.length() > 1 )
+        if ( GlobalVariable.profile_photo_path != null && GlobalVariable.profile_photo_path.length() > 1 && !GlobalVariable.profile_photo_path.equals("/user/images/") )
         {
         	options = new DisplayImageOptions.Builder()
     		.showImageForEmptyUri(R.drawable.default_user_icon)
@@ -230,11 +249,8 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
         	    StrictMode.setThreadPolicy(policy);
         	}
         	
-        	Bitmap bmp = ImageLoader.getInstance().loadImageSync("http://longhairhow2.com/api" + GlobalVariable.profile_photo_path, targetSize, options);
+        	Bitmap bmp = ImageLoader.getInstance().loadImageSync(GlobalVariable.API_URL + GlobalVariable.profile_photo_path, targetSize, options);
         	imgProfilePhoto.setImageBitmap(GlobalVariable.getCircularBitmap(bmp)) ;
-        	
-        	imgProfilePhoto.getLayoutParams().width = 80 ;
-        	imgProfilePhoto.getLayoutParams().height = 80 ;
         	
         	try {
         		ImageLoader.getInstance().destroy() ;
@@ -242,6 +258,15 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
         		e.printStackTrace() ;
         	}
         }
+        
+        imgProfilePhoto.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				Intent intent = new Intent(UserVideoActivity.this, ProfileActivity.class) ;
+				startActivity(intent) ;
+			}
+		}) ;
 	}
 	
 	@Override
@@ -254,6 +279,7 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
     	    StrictMode.setThreadPolicy(policy);
     	}
         
+        label_novideo = (TextView)findViewById(R.id.label_novideo) ;
         setProfilePhoto() ;
         _dialog_progress = new ProgressDialog(UserVideoActivity.this) ;
 		httpTask.delegate = UserVideoActivity.this ;
@@ -269,7 +295,7 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
 				
 				selected_vid_id = videos[arg2].v_id ;
 				Intent myIntent = new Intent(UserVideoActivity.this, VideoStreamActivity.class) ;
-				myIntent.putExtra("address", "http://longhairhow2.com/api/vid/stream.php?user_id=" + GlobalVariable.user_id + 
+				myIntent.putExtra("address", GlobalVariable.API_URL + "/vid/stream.php?user_id=" + GlobalVariable.user_id + 
 						"&accessToken=" + GlobalVariable.accessToken +
 						"&video_id=" + selected_vid_id) ;
 				myIntent.putExtra("title", videos[arg2].vid_title) ;
@@ -298,7 +324,7 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
     	builder.addTextBody("u_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN) ;
     	builder.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN) ;
 		
-		GlobalVariable.request_url = "http://longhairhow2.com/api/user/bundles/get" ;
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/user/bundles/get" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = UserVideoActivity.this ;

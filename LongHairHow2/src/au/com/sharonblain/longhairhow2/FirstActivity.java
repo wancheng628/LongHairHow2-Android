@@ -3,7 +3,6 @@ package au.com.sharonblain.longhairhow2;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
-import android.preference.PreferenceManager;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -42,6 +41,7 @@ import com.facebook.android.Facebook;
 import com.facebook.android.Facebook.DialogListener;
 import com.facebook.android.FacebookError;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -74,7 +74,7 @@ public class FirstActivity extends Activity implements AsyncResponse {
     
     private SharedPreferences prefs ;
     
-    private String access_token_url = "http://longhairhow2.com/api/common/access-token/grant" ;
+    private String access_token_url = GlobalVariable.API_URL + "/common/access-token/grant" ;
     private HttpPostTask httpTask = new HttpPostTask() ;
     private int _request_kind ;
     
@@ -84,9 +84,12 @@ public class FirstActivity extends Activity implements AsyncResponse {
     //private static String APP_SECRET = "0b6facc6007b9118d3680c1dbfb2a077";
     private Facebook facebook;
     private AsyncFacebookRunner mAsyncRunner;
-    private SharedPreferences mPrefs;
     
     private JSONObject profile ;
+    
+    @Override
+	public void onBackPressed() {
+	}
     
     class DownloadFileFromURL extends AsyncTask<String, String, String> {
 
@@ -166,7 +169,7 @@ public class FirstActivity extends Activity implements AsyncResponse {
 				else
 					builder.addTextBody("dob", "2000-01-01", ContentType.TEXT_PLAIN);
 				
-				GlobalVariable.request_url = "http://longhairhow2.com/api/user/login" ;
+				GlobalVariable.request_url = GlobalVariable.API_URL + "/user/login" ;
 				GlobalVariable.request_register = 1 ;
 				GlobalVariable.profile_photo_path = Environment.getExternalStorageDirectory().toString() + "/longhair_temp.jpg" ;
 				File file = new File(GlobalVariable.profile_photo_path) ;
@@ -274,7 +277,7 @@ public class FirstActivity extends Activity implements AsyncResponse {
 			}
 		}) ;
         
-        prefs = PreferenceManager.getDefaultSharedPreferences(this); 
+        prefs = getSharedPreferences("user_info", Context.MODE_PRIVATE) ;
         
         if ( GlobalVariable.accessToken != null )
         {
@@ -287,8 +290,10 @@ public class FirstActivity extends Activity implements AsyncResponse {
 			
 			@Override
 			public void onClick(View arg0) {
+				GlobalVariable.user_id = "-10" ;
 				Intent myIntent = new Intent(FirstActivity.this, MainActivity.class);
 				startActivity(myIntent);
+				
 			}
 		}) ;
         
@@ -297,7 +302,7 @@ public class FirstActivity extends Activity implements AsyncResponse {
     public void loginToFacebook() {
     	try {
 
-			PackageInfo info = getPackageManager().getPackageInfo(	 "com.example.map_project",	 PackageManager.GET_SIGNATURES);
+			PackageInfo info = getPackageManager().getPackageInfo("au.com.sharonblain.longhairhow2", PackageManager.GET_SIGNATURES);
 			for (Signature signature : info.signatures)
 			{
 				MessageDigest md = MessageDigest.getInstance("SHA");	 md.update(signature.toByteArray());
@@ -308,7 +313,7 @@ public class FirstActivity extends Activity implements AsyncResponse {
 			} catch (NoSuchAlgorithmException e) {
 		}
     	
-    	if ( GlobalVariable.fb_id != null && GlobalVariable.fb_id.equals("null") )
+    	if ( GlobalVariable.fb_id != null && !GlobalVariable.fb_id.equals("null") )
     	{
     		if ( Integer.parseInt(GlobalVariable.fb_id) > 0 )
     		{
@@ -317,9 +322,9 @@ public class FirstActivity extends Activity implements AsyncResponse {
     		}    		
     	}
     	
-        mPrefs = getPreferences(MODE_PRIVATE);
-        String access_token = mPrefs.getString("access_token", null);
-        long expires = mPrefs.getLong("access_expires", 0);
+        prefs = getSharedPreferences("user_info", Context.MODE_PRIVATE) ;
+        String access_token = prefs.getString("access_token", null);
+        long expires = prefs.getLong("access_expires", 0);
      
         if (access_token != null) {
             facebook.setAccessToken(access_token);
@@ -330,7 +335,7 @@ public class FirstActivity extends Activity implements AsyncResponse {
         }
      
         if (!facebook.isSessionValid()) {
-            facebook.authorize(FirstActivity.this, new String[] { "email"}, new DialogListener() {
+            facebook.authorize(FirstActivity.this, new String[] { }, new DialogListener() {
             	@Override
             	public void onCancel() {
             		// Function to handle cancel event
@@ -516,7 +521,7 @@ public class FirstActivity extends Activity implements AsyncResponse {
     				getAccessToken(false) ;
     			}
     		} else {
-    			Toast.makeText(FirstActivity.this, "Couldn't get any data from the url", Toast.LENGTH_LONG).show() ;
+    			Toast.makeText(FirstActivity.this, "Couldn't get any data from the server.", Toast.LENGTH_LONG).show() ;
     			GlobalVariable.f_valid = false ;
     			getAccessToken(false) ;
     		}
@@ -535,13 +540,56 @@ public class FirstActivity extends Activity implements AsyncResponse {
 	    				JSONArray arr_result = new JSONArray(_result) ;
 	    				JSONObject result = arr_result.getJSONObject(0) ;
 	    				
-	    				GlobalVariable.f_name = result.getString("f_name") ;
-	    				GlobalVariable.l_name = result.getString("l_name") ;
-	    				GlobalVariable.email = result.getString("email") ;
-	    				GlobalVariable.country = result.getString("country") ;
+	    				SharedPreferences.Editor editor = prefs.edit();
+	    	    		
+	    	    		if (result.getString("f_name") != null && result.getString("f_name").length() > 0)
+	    	    		{
+	    	    			GlobalVariable.f_name = result.getString("f_name") ;
+	    	    			editor.putString("user_id",GlobalVariable.f_name);
+	    	    		}
+	    				if (result.getString("l_name") != null && result.getString("l_name").length() > 0)
+	    				{
+	    					GlobalVariable.l_name = result.getString("l_name") ;
+	    					editor.putString("l_name",GlobalVariable.l_name);
+	    				}
+	    				if (result.getString("email") != null && result.getString("email").length() > 0)
+	    				{
+	    					GlobalVariable.email = result.getString("email") ;
+	    					editor.putString("email",GlobalVariable.email);
+	    				}
+	    				if (result.getString("country") != null && result.getString("country").length() > 0)
+	    				{
+	    					GlobalVariable.country = result.getString("country") ;
+	    					editor.putString("country",GlobalVariable.country);
+	    				}
+	    				if (result.getString("dob") != null && result.getString("dob").length() > 0)
+	    				{
+	    					GlobalVariable.dob = result.getString("dob") ;
+	    					editor.putString("dob",GlobalVariable.dob);
+	    				}
+	    				if (result.getString("fb_id") != null && result.getString("fb_id").length() > 0)
+	    				{
+	    					GlobalVariable.fb_id = result.getString("fb_id") ;
+	    					editor.putString("fb_id",GlobalVariable.fb_id);
+	    				}
+	    				if (result.getString("gender") != null && result.getString("gender").length() > 0)
+	    				{
+	    					GlobalVariable.tempGender = result.getString("gender") ;
+	    					editor.putString("tempGender",GlobalVariable.tempGender);
+	    				}
+	    				if (result.getString("profile_pic") != null && result.getString("profile_pic").length() > 0)
+	    				{
+	    					GlobalVariable.profile_photo_path = result.getString("profile_pic") ;
+	    					editor.putString("profile_photo_path",GlobalVariable.profile_photo_path);
+	    				}
 	    				
 	    				if (result.getString("u_id") != null && result.getString("u_id").length() > 0)
+	    				{
 	    					GlobalVariable.user_id = result.getString("u_id") ;
+	    					editor.putString("user_id",GlobalVariable.user_id);
+	    				}
+	    				
+	    				editor.commit();
 	    				
 	    				Intent myIntent = new Intent(FirstActivity.this, MainActivity.class);
 						startActivity(myIntent);
@@ -556,7 +604,7 @@ public class FirstActivity extends Activity implements AsyncResponse {
 				}
     			
     		} else {
-    			Toast.makeText(FirstActivity.this, "Couldn't get any data from the url", Toast.LENGTH_LONG).show() ;
+    			Toast.makeText(FirstActivity.this, "Couldn't get any data from the server.", Toast.LENGTH_LONG).show() ;
     			GlobalVariable.f_valid = false ;    			
     		}
     	}

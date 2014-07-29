@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_margin="1dp"
@@ -8,56 +8,53 @@
     android:weightSum="10" >
 
     <RelativeLayout
+        android:id="@+id/layout_topbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#ffffff"
-        android:visibility="gone" >
+        android:layout_height="50dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:background="#ffffff" >
 
         <TextView
             android:id="@+id/label_type"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true"
+            android:layout_marginLeft="70dp"
+            android:layout_marginRight="70dp"
             android:gravity="center_horizontal"
+            android:maxLines="2"
             android:text="Featured"
+            android:textColor="#000000"
             android:textSize="22sp" />
 
         <ImageView
             android:id="@+id/img_profile_photo"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:layout_alignRight="@id/label_type"
+            android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
-            android:layout_marginRight="5dp"
-            android:adjustViewBounds="true"
-            android:padding="5dp"
-            android:scaleType="fitXY"
+            android:layout_marginRight="10dp"
             android:src="@drawable/default_user_icon" />
 
     </RelativeLayout>
 
-    <FrameLayout
-        android:id="@+id/video_frame"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
-
-        <VideoView
-            android:id="@+id/video_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-        
-    </FrameLayout>
-
     <ScrollView
         android:id="@+id/scrollView1"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:layout_below="@id/layout_topbar" >
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical" >
+
+            <VideoView
+                    android:id="@+id/video_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
 
             <TextView
                 android:id="@+id/label_photo_purchase"
@@ -67,7 +64,8 @@
                 android:gravity="center_vertical|center_horizontal"
                 android:paddingBottom="10dp"
                 android:paddingTop="10dp"
-                android:text="AVAILABLE VIDEOS - TAP TO ADD TO CART" />
+                android:text="AVAILABLE VIDEOS - TAP TO ADD TO CART"
+                android:textColor="#555555" />
 
             <au.com.sharonblain.featured.ExpandableHeightGridView
                 android:id="@+id/grid_photos"
@@ -81,33 +79,6 @@
                 android:numColumns="3"
                 android:stretchMode="columnWidth"
                 android:verticalSpacing="20dp" />
-            
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical|center_horizontal"
-                android:paddingBottom="10dp"
-                android:paddingTop="10dp"
-                android:weightSum="10" >
-
-                <ImageView
-                    android:id="@+id/btnAddCart"
-                    android:layout_width="0dip"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:layout_weight="1"
-                    android:src="@drawable/shopping_cart" />
-
-                <TextView
-                    android:id="@+id/label_cart_info"
-                    android:layout_width="0dip"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical|center_horizontal"
-                    android:layout_marginLeft="10dp"
-                    android:layout_weight="9"
-                    android:gravity="center_vertical|center_horizontal"
-                    android:text="0 Video in Cart" />
-            </LinearLayout>
 
             <TextView
                 android:id="@+id/label_description"
@@ -119,8 +90,35 @@
                 android:layout_marginRight="30dp"
                 android:layout_marginTop="20dp"
                 android:text="TextView"
+                android:textColor="#555555"
                 android:textSize="16sp" />
 
 		</LinearLayout>
-    </ScrollView>    
-</LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="2dp"
+        android:layout_marginRight="2dp"
+        android:layout_marginTop="2dp"
+        android:background="#ffffff"
+        android:gravity="center_horizontal"
+        android:paddingBottom="10dp"
+        android:paddingTop="10dp" >
+
+        <TextView
+            android:id="@+id/label_cart_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:drawableLeft="@drawable/shopping_cart"
+            android:drawablePadding="5dip"
+            android:gravity="center_horizontal"
+            android:text="0 Video in Cart"
+            android:textColor="#ff0000"
+            android:textSize="24sp" />
+    </LinearLayout>
+    
+</RelativeLayout>

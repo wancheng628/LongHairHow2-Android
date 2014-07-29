@@ -86,7 +86,7 @@ public class SearchListActivity extends Activity implements AsyncResponse  {
 		params.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN) ;
 		params.addTextBody("query", getIntent().getExtras().getString("query"), ContentType.TEXT_PLAIN) ;
 		
-		GlobalVariable.request_url = "http://longhairhow2.com/api/vid/search" ;
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/vid/search" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = SearchListActivity.this ;
@@ -118,7 +118,7 @@ public class SearchListActivity extends Activity implements AsyncResponse  {
 		params.addTextBody("action", "/common/access-token/grant", ContentType.TEXT_PLAIN) ;
 		params.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN) ;
 		
-		GlobalVariable.request_url = "http://longhairhow2.com/api/common/access-token/grant" ;
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/common/access-token/grant" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = this;
@@ -181,14 +181,16 @@ public class SearchListActivity extends Activity implements AsyncResponse  {
 					            		
 					            		if ( key.equals(jObject2.getString("v_id")) )
 					            		{
-					            			BunImageArray _item = new BunImageArray(jObject2.getString("vid_title"), "Found in collection " + 
-					            					jObject2.getString("vid_title"), "http://longhairhow2.com/api" + jObject2.getString("vid_image")) ;
+					            			String _vid_title = jObject2.getString("vid_title").replace(_temp.title, "") ;
+					            			_vid_title = _vid_title.replace(": ", "").replace("- ", "") ;
+					            			BunImageArray _item = new BunImageArray(_vid_title, "Found in collection " + 
+					            					jObject2.getString("vid_title"), GlobalVariable.API_URL + jObject2.getString("vid_image")) ;
 											dataArr.add(_item) ;
 											
 					            		}
 					            		
 					            		_temp_title = _temp_title + jObject2.getString("vid_title") + "^" ;
-					            		_temp_images =  _temp_images + "http://longhairhow2.com/api" + jObject2.getString("vid_image") + "^" ;
+					            		_temp_images =  _temp_images + GlobalVariable.API_URL + jObject2.getString("vid_image") + "^" ;
 					            	}
 					            	
 					            	_temp.v_ids = _temp_vid ;
@@ -217,7 +219,7 @@ public class SearchListActivity extends Activity implements AsyncResponse  {
 					
 				}
 			} else {
-				Log.e("ServiceHandler", "Couldn't get any data from the url") ;
+				Log.e("ServiceHandler", "Couldn't get any data from the server.") ;
 				
 			}
 		}

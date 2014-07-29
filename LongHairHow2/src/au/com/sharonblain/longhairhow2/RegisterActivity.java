@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.mime.content.FileBody;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -44,8 +45,10 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -452,7 +455,7 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 		if ( photo_file != null && photo_file.exists() )
 			builder.addPart("profile_pic", new FileBody(photo_file)) ;
 						
-		GlobalVariable.request_url = "http://longhairhow2.com/api/user/register" ;
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/user/register" ;
 		GlobalVariable.request_register = 1 ;
 		
 		httpTask = new HttpPostTask() ;
@@ -484,7 +487,7 @@ public class RegisterActivity extends Activity implements AsyncResponse{
     	builder.addTextBody("action", "/common/access-token/grant", ContentType.TEXT_PLAIN);
     	builder.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN);
 		
-		GlobalVariable.request_url = "http://longhairhow2.com/api/common/access-token/grant" ;
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/common/access-token/grant" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = this;
@@ -614,7 +617,34 @@ public class RegisterActivity extends Activity implements AsyncResponse{
         gridView.setEnabled(false) ;
         gridView.setVerticalScrollBarEnabled(false) ;
     }
+	
+	protected void login(String _email, String _password) {
+    	
+		nRequestKind = 3 ;
+    	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
+    	{
+    		_dialog_progress = ProgressDialog.show(this, "Loading...", "Please wait...", true);    		
+    	}			
+    	
+    	MultipartEntityBuilder builder = MultipartEntityBuilder.create() ;
+    	builder.addTextBody("action", "/user/login", ContentType.TEXT_PLAIN);
+    	builder.addTextBody("user_id", "-10", ContentType.TEXT_PLAIN);
+    	if ( GlobalVariable.accessToken == null )
+    		GlobalVariable.accessToken = "" ;
+    	
+    	builder.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN);
+    	builder.addTextBody("email", _email, ContentType.TEXT_PLAIN);
+    	builder.addTextBody("pwd", GlobalVariable.md5(_password), ContentType.TEXT_PLAIN);			
+		
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/user/login" ;
+		
+		httpTask = new HttpPostTask() ;
+		httpTask.delegate = RegisterActivity.this ;
+		httpTask.execute(builder) ;
+		
+	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public void processFinish(String output) throws IllegalArgumentException {
 		if ( (_dialog_progress != null) && (_dialog_progress.isShowing()) )
@@ -635,28 +665,56 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 					if (jsonObj.get("type").equals("Success"))
 					{
 						//Register() ;
-						Intent intent = new Intent(RegisterActivity.this, LoginActivity.class) ;
-						startActivity(intent) ;
-						finish() ;
 						
-						Toast.makeText(RegisterActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+						
+						AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+						alertDialog.setTitle(jsonObj.getString("type"));
+						alertDialog.setMessage(jsonObj.getString("message"));
+						alertDialog.setButton("OK", new DialogInterface.OnClickListener() {
+						public void onClick(final DialogInterface dialog, final int which) {
+							login(txtEmail.getText().toString(), txtDesirePass.getText().toString()) ;
+							
+							}
+						});
+						alertDialog.setIcon(R.drawable.ic_launcher);
+						alertDialog.show();
+						
 					}
 					else
 					{
-						Toast.makeText(RegisterActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+						AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+						alertDialog.setTitle(jsonObj.getString("type"));
+						alertDialog.setMessage(jsonObj.getString("message"));
+						alertDialog.setButton("OK", new DialogInterface.OnClickListener() {
+						public void onClick(final DialogInterface dialog, final int which) {
+							
+							}
+						});
+						alertDialog.setIcon(R.drawable.ic_launcher);
+						alertDialog.show();
 					}
 				
 				} catch (JSONException e) {
 					e.printStackTrace();					
 				}
 			} else {
-				Toast.makeText(RegisterActivity.this, "Couldn't get any data from the url", Toast.LENGTH_LONG).show() ;			
+				
+				AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+				alertDialog.setTitle("Error");
+				alertDialog.setMessage("Couldn't get any data from the server.");
+				alertDialog.setButton("OK", new DialogInterface.OnClickListener() {
+				public void onClick(final DialogInterface dialog, final int which) {
+					getAccessToken() ;
+					}
+				});
+				alertDialog.setIcon(R.drawable.ic_launcher);
+				alertDialog.show();
 			}		
 			
 			GlobalVariable.tempBirthday = "" ;
 			GlobalVariable.tempCountry = "" ;
 			GlobalVariable.tempGender = "" ;
-			finish() ;
+			
 		}
 		else if ( nRequestKind == 2 ){
 			try {
@@ -690,7 +748,49 @@ public class RegisterActivity extends Activity implements AsyncResponse{
 				getAccessToken() ;
 			}
 		}
-		
-		
+		else if ( nRequestKind == 3 )
+		{
+			if (output.length() > 0) {
+				try {
+					JSONObject jsonObj = new JSONObject(output) ;
+					if (jsonObj.get("type").equals("Success"))
+					{
+						JSONArray result = jsonObj.getJSONArray("results") ;
+						JSONObject _result = result.getJSONObject(0) ;
+						
+						GlobalVariable.user_id = _result.getString("u_id") ;
+						GlobalVariable.f_name = _result.getString("f_name") ;
+						GlobalVariable.l_name = _result.getString("l_name") ;
+						GlobalVariable.email = _result.getString("email") ;
+						GlobalVariable.country = _result.getString("country") ;
+						GlobalVariable.dob = _result.getString("dob") ;
+						GlobalVariable.fb_id = _result.getString("fb_id") ;
+						GlobalVariable.tempGender = _result.getString("gender") ;
+						GlobalVariable.profile_photo_path = _result.getString("profile_pic") ;
+
+						SharedPreferences prefs = getSharedPreferences("user_info", Context.MODE_PRIVATE) ;
+						SharedPreferences.Editor editor = prefs.edit();
+			    		editor.putString("prev_password",txtDesirePass.getText().toString()) ;
+			    		editor.putString("prev_email",txtEmail.getText().toString()) ;
+			    		editor.commit();
+			    		
+						Intent myIntent = new Intent(RegisterActivity.this, MainActivity.class);
+						startActivity(myIntent);
+						finish() ;
+					}
+					else
+					{
+						Toast.makeText(RegisterActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+					}
+				
+				} catch (JSONException e) {
+					e.printStackTrace();
+					
+				}
+			} else {
+				Log.e("ServiceHandler", "Couldn't get any data from the server.") ;
+				
+			}
+		}
 	}
 }

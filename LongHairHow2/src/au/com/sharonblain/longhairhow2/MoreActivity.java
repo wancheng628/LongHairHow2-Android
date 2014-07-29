@@ -29,6 +29,11 @@ public class MoreActivity extends Activity implements AsyncResponse{
     private ProgressDialog _dialog_progress ;
 	private HttpPostTask httpTask = new HttpPostTask() ;
 	
+	@Override
+	public void onBackPressed() {
+	}
+	
+	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -127,7 +132,7 @@ public class MoreActivity extends Activity implements AsyncResponse{
 		if (output.length() > 0) {
 			
 		} else {
-			Log.e("ServiceHandler", "Couldn't get any data from the url") ;
+			Log.e("ServiceHandler", "Couldn't get any data from the server.") ;
 			
 		}
 		

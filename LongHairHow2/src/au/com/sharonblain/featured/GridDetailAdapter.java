@@ -15,11 +15,13 @@ public class GridDetailAdapter extends BaseAdapter {
 	private Context context;
 	private final String[] image_urls ;
 	private final String[] titles ;
+	private final boolean[] purchased ;
 	
-	public GridDetailAdapter(Context context, String[] titles, String[] urls) {
+	public GridDetailAdapter(Context context, String[] titles, String[] urls, boolean[] purchased) {
 		this.context = context;
 		this.image_urls = urls;
 		this.titles = titles;
+		this.purchased = purchased ;
 	}
  
 	@Override
@@ -54,6 +56,7 @@ public class GridDetailAdapter extends BaseAdapter {
 		TextView title = (TextView)gridView.findViewById(R.id.label_detail_title) ;
  		title.setText(titles[arg0]) ;
  		title.setTypeface(GlobalVariable.tf_light) ;
+ 		ImageView btnPlay = (ImageView)gridView.findViewById(R.id.btnPlay);
  		
  		img_photo = (ImageView)gridView.findViewById(R.id.img_detail_photo) ;
  		
@@ -65,6 +68,18 @@ public class GridDetailAdapter extends BaseAdapter {
 		img_photo = (ImageView)gridView.findViewById(R.id.img_detail_photo) ;
  		img_photo.getLayoutParams().width = nWidth ;
  		img_photo.getLayoutParams().height = nWidth ;
+ 		
+ 		TextView label_photo_purchase = (TextView)gridView.findViewById(R.id.label_photo_purchase);
+ 		if ( purchased[arg0] )
+ 		{
+ 			label_photo_purchase.setText("PURCHASED") ;
+ 			btnPlay.setVisibility(View.VISIBLE) ;
+ 		}
+ 		else
+ 		{
+ 			label_photo_purchase.setText("ADD") ;
+ 			btnPlay.setVisibility(View.GONE) ;
+ 		}
  		
 		return gridView;			
 	} 

@@ -1,9 +1,9 @@
 package au.com.sharonblain.featured;
 
 import java.util.ArrayList;
-
-import ImageCache.ImageLoader;
+import com.squareup.picasso.Picasso;
 import android.content.Context;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,7 +19,7 @@ public class GridAdapter  extends ArrayAdapter<String>{
 	private final Context context;
 	
 	public ArrayList<String> titles ;
-	public ArrayList<String> images;
+	public ArrayList<String> image_urls;
 	
 	public GridAdapter(Context context, ArrayList<String> titles) {
 		
@@ -33,60 +33,66 @@ public class GridAdapter  extends ArrayAdapter<String>{
 	public void updateAdapter(ArrayList<String> titles, ArrayList<String> icons, 
 								ArrayList<String> prices, ArrayList<String> vid_url, ArrayList<String> descriptions) {
 		this.titles = titles;
-		this.images = icons ;	
+		this.image_urls = icons ;	
 		 
 	}
 	
 	@Override
-	public View getView(final int position, View view, ViewGroup parent) {
+	public View getView(final int position, View convertView, ViewGroup parent) {
 
-		ViewHolder holder = null;
+		//ViewHolder holder = new ViewHolder();
+		TextView txtTitle ;
+		ViewFlipper flipper ;
+		View gridView;
 		
-		if (view == null) {
+		if (convertView == null) {
+			//holder = new ViewHolder(); 
 			LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-	 		view = inflater.inflate(R.layout.item_photo, parent, false);
-			holder = new ViewHolder();
-			view.setTag(holder);			
+			convertView = inflater.inflate(R.layout.item_photo, null);
+			gridView = convertView ;
+		    	
 		} 
 		else
 	    {
-	        holder = (ViewHolder) view.getTag();
+			gridView= convertView;
 	    }
 		
-		holder.flipper = (ViewFlipper) view.findViewById(R.id.flipper) ;
-		holder.txtTitle = (TextView) view.findViewById(R.id.label_hair_name) ;
-        holder.txtTitle.setTypeface(GlobalVariable.tf_medium) ;
-		holder.txtTitle.setText(titles.get(position)) ;
-		String _temp = images.get(position) ;
-		_temp.replace(" ", "").replace(",", "") ;
-		
-		String icon_urls[] = _temp.trim().split("\\^") ;
-		
-		if ( holder.images == null )
+		flipper = (ViewFlipper) convertView.findViewById(R.id.flipper) ;
+		txtTitle = (TextView) convertView.findViewById(R.id.label_hair_name) ;
+        txtTitle.setTypeface(GlobalVariable.tf_medium) ;
+        
+		if ( this.titles != null )
 		{
-			holder.images = new ImageView[icon_urls.length] ;
-			for ( int i = 0 ; i < icon_urls.length ; i++ )
-			{
-				ImageLoader loader = new ImageLoader(context) ;
-				
-				if ( holder.images[i] == null )
-				{
-					holder.images[i] = new ImageView(context) ;
-					
-					if ( icon_urls[i] != null && icon_urls.length > 1 )
-						loader.DisplayImage(icon_urls[i], holder.images[i]) ;
-					
-				}
-				holder.flipper.addView(holder.images[i]) ;
-			}
+			txtTitle.setText(this.titles.get(position)) ;
 		}
 		
-		holder.flipper.setInAnimation(context, R.drawable.view_translation_in_left);
-		holder.flipper.setOutAnimation(context, R.drawable.view_translation_in_right);
+		if ( this.image_urls != null )
+		{
+			String _temp = this.image_urls.get(position) ;
+			_temp.replace(" ", "").replace(",", "") ;
+			String icon_urls[] = _temp.trim().split("\\^") ;
+			
+			ImageView image_views[] ;
+			image_views = new ImageView[icon_urls.length] ;
+			
+			flipper.removeAllViews() ;
+			flipper.stopFlipping() ;
+			for ( int i = 0 ; i < icon_urls.length ; i++ )
+			{
+				image_views[i] = new ImageView(context) ;
+					
+				if ( icon_urls[i] != null && icon_urls[i].length() > 1 )
+					Picasso.with(context).load(Uri.parse(icon_urls[i])).into(image_views[i]) ;
+				
+				flipper.addView(image_views[i]) ;
+			}
+			
+			flipper.setInAnimation(context, R.drawable.view_translation_in_left);
+			flipper.setOutAnimation(context, R.drawable.view_translation_in_right);
+			flipper.startFlipping();
+		}
 		
-		holder.flipper.startFlipping();
-		
-		return view;
+		return gridView;
 	}
 		
 	@Override
@@ -104,11 +110,11 @@ public class GridAdapter  extends ArrayAdapter<String>{
 		return 0;
 	}
 	
-	
+	/*
 	static class ViewHolder {
 		ViewFlipper flipper ;
 		TextView txtTitle ;
-		ImageView images[] ;
+		//ImageView images[] ;
 		
-	}
+	}*/
 }

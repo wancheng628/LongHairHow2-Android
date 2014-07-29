@@ -13,31 +13,29 @@ import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.assist.ImageScaleType;
 import com.nostra13.universalimageloader.core.assist.ImageSize;
 import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
-import com.squareup.picasso.Picasso;
 
-import android.app.ActionBar;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewTreeObserver;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.MediaController;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
+import au.com.sharonblain.longhairhow2.ProfileActivity;
 import au.com.sharonblain.longhairhow2.R;
 import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
 import au.com.sharonblain.request_server.HttpPostTask;
+import au.com.sharonblain.uservideo.VideoStreamActivity;
 
 @SuppressWarnings("deprecation")
 public class FeaturedDetailActivity extends Activity implements AsyncResponse {
@@ -46,10 +44,8 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 	private ProgressDialog _dialog_progress ;
 	
 	private TextView title ;
-	private ImageView profile_photo ;
 	private VideoView video ;
 	private ExpandableHeightGridView grid ;
-	private ImageView btnCart ;
 	private TextView label_cart ;
 	private TextView mDescriptionTextView ;
 	
@@ -57,7 +53,8 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 	private String[] arr_titles ;
 	private String[] arr_prices ;
 	private String[] arr_vids ;
-	private Boolean[] arr_charged ;
+	private boolean[] arr_charged ;
+	private boolean[] arr_purchased ;
 	
 	private String b_id ;
 	
@@ -89,11 +86,9 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 	private void getLayoutObjects()
 	{
 		title = (TextView)findViewById(R.id.label_type) ;
-		profile_photo = (ImageView)findViewById(R.id.img_profile_photo) ;
 		video = (VideoView)findViewById(R.id.video_view) ;
 		grid = (ExpandableHeightGridView)findViewById(R.id.grid_photos) ;
 		mDescriptionTextView = (TextView)findViewById(R.id.label_description) ;
-		btnCart = (ImageView)findViewById(R.id.btnAddCart) ;
 		label_cart = (TextView)findViewById(R.id.label_cart_info) ;
 		label_cart.setTypeface(GlobalVariable.tf_medium) ;
 		TextView label_photo_purchase = (TextView)findViewById(R.id.label_photo_purchase) ;
@@ -104,11 +99,6 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 		title.setText(getIntent().getExtras().getString("title")) ;
 		mDescriptionTextView.setText(getIntent().getExtras().getString("description")) ;
 		
-        if ( GlobalVariable.profile_photo_path != null && GlobalVariable.profile_photo_path.length() > 1 )
-        	Picasso.with(FeaturedDetailActivity.this).load(Uri.parse(GlobalVariable.profile_photo_path)).into(profile_photo) ;
-        else
-        	profile_photo.setImageBitmap(null) ;
-        
 	}
 	
 	private void setVideoController() {
@@ -122,24 +112,20 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
         video.setMinimumWidth(width); 
         video.setMinimumHeight(width); 
         video.setMediaController(media_Controller);
-        video.setVideoPath("http://longhairhow2.com/api" + getIntent().getExtras().getString("video")) ;
+        video.setVideoPath(GlobalVariable.API_URL + getIntent().getExtras().getString("video")) ;
         video.start() ;
         
 	}
 	
 	private void setActionBar()
 	{
-		LayoutInflater mInflater = LayoutInflater.from(this);
- 
-        View mCustomView = mInflater.inflate(R.layout.custom_action_bar, null);
-        TextView mTitleTextView = (TextView) mCustomView.findViewById(R.id.title_text);
+		TextView mTitleTextView = (TextView)findViewById(R.id.label_type);
         mTitleTextView.setText(getIntent().getExtras().getString("title")) ;
         mTitleTextView.setTypeface(GlobalVariable.tf_light) ;
  
-        ImageButton imageButton = (ImageButton) mCustomView
-                .findViewById(R.id.imageButton);
+        ImageView profile_photo = (ImageView)findViewById(R.id.img_profile_photo);
         
-        if ( GlobalVariable.profile_photo_path != null && GlobalVariable.profile_photo_path.length() > 1 )
+        if ( GlobalVariable.profile_photo_path != null && GlobalVariable.profile_photo_path.length() > 1  && !GlobalVariable.profile_photo_path.equals("/user/images/"))
         {
         	options = new DisplayImageOptions.Builder()
     		.showImageForEmptyUri(R.drawable.default_user_icon)
@@ -157,47 +143,25 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
         	.build();
         	ImageLoader.getInstance().init(config);
         	ImageSize targetSize = new ImageSize(160, 160);
-        	Bitmap bmp = ImageLoader.getInstance().loadImageSync("http://longhairhow2.com/api" + GlobalVariable.profile_photo_path, targetSize, options);
-        	imageButton.setImageBitmap(GlobalVariable.getCircularBitmap(bmp)) ;
+        	Bitmap bmp = ImageLoader.getInstance().loadImageSync(GlobalVariable.API_URL + GlobalVariable.profile_photo_path, targetSize, options);
+        	profile_photo.setImageBitmap(GlobalVariable.getCircularBitmap(bmp)) ;
         	try {
         		ImageLoader.getInstance().destroy() ;
         	} catch (NullPointerException e) {
         		e.printStackTrace() ;
         	}
-        	imageButton.getLayoutParams().width = 80 ;
-        	imageButton.getLayoutParams().height = 80 ;
         	
-        	try {
-        		ImageLoader.getInstance().destroy() ;
-        	} catch (NullPointerException e) {
-        		e.printStackTrace() ;
-        	}
         }
         
-        imageButton.setOnClickListener(new OnClickListener() {
+        profile_photo.setOnClickListener(new OnClickListener() {
  
             @Override
             public void onClick(View view) {
-                
+            	Intent intent = new Intent(FeaturedDetailActivity.this, ProfileActivity.class) ;
+				startActivity(intent) ;
             }
         });
  
-        try {
-        	ActionBar mActionBar = getActionBar();
-        	
-        	if ( mActionBar != null )
-        	{
-        		mActionBar.setDisplayShowHomeEnabled(false);
-                mActionBar.setDisplayShowTitleEnabled(false);
-                
-                mActionBar.setCustomView(mCustomView);
-                mActionBar.setDisplayShowCustomEnabled(true);
-        	}            
-            
-        } catch (NullPointerException e) {
-        	e.printStackTrace() ;
-        }
-        
 	}
 	
 	@Override
@@ -260,12 +224,23 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 			e.printStackTrace();
 		}
         
-        arr_charged = new Boolean[6] ;
+        arr_charged = new boolean[6] ;
         for ( int i = 0 ; i < 6 ; i++ )
         	arr_charged[i] = false ;
         
-        grid.setAdapter(new GridDetailAdapter(this, arr_titles, arr_images));
+        arr_purchased = new boolean[6] ;
+        for ( int i = 0 ; i < 6 ; i++ )
+        {
+        	if ( GlobalVariable.purchasedVideos.contains(arr_vids[i]))
+        		arr_purchased[i] = true ;
+        	else
+        		arr_purchased[i] = false ;
+        }
+        
+        grid.setAdapter(new GridDetailAdapter(this, arr_titles, arr_images, arr_purchased));
         grid.setExpanded(true);
+        
+        setVideoController() ;
         
         grid.getViewTreeObserver().addOnGlobalLayoutListener(
     	    new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -273,35 +248,56 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
     	       @Override
     	        public void onGlobalLayout() {
     	            grid.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-    	            setVideoController() ;
+    	            
     	        }
     	    });
         
         grid.setOnItemClickListener(new OnItemClickListener() {
         	public void onItemClick(AdapterView<?> parent, View v, int position, long id) {
-                TextView label_photo_purchase = (TextView)v.findViewById(R.id.label_photo_purchase) ;
-                arr_charged[position] = !arr_charged[position] ;
-                
-                if ( arr_charged[position] == true )
-                {
-                	label_photo_purchase.setText("REMOVE") ;
-                	total_videos = total_videos + 1 ;
-                }
-                else
-                {
-                	label_photo_purchase.setText("ADD") ;
-                	total_videos = total_videos - 1 ;
-                }
-                
-                label_cart.setText( String.valueOf(total_videos) + " Video in Cart") ;
+        		if ( arr_purchased[position] == false )
+        		{
+        			TextView label_photo_purchase = (TextView)v.findViewById(R.id.label_photo_purchase) ;
+                    arr_charged[position] = !arr_charged[position] ;
+                    
+                    if ( arr_charged[position] == true )
+                    {
+                    	label_photo_purchase.setText("REMOVE") ;
+                    	total_videos = total_videos + 1 ;
+                    }
+                    else
+                    {
+                    	label_photo_purchase.setText("ADD") ;
+                    	total_videos = total_videos - 1 ;
+                    }
+                    
+                    String res = "" ;
+					if ( total_videos > 1 )
+						res = String.format("BUY %d videos @ AU$ %.02f", total_videos, total_videos * 9.99) ;
+					else
+						res = String.format("%d video @ AU$ %.02f", total_videos, total_videos * 9.99) ;
+					
+                    label_cart.setText( res ) ;
+        		}
+        		else
+        		{
+        			Intent intent = new Intent(FeaturedDetailActivity.this, VideoStreamActivity.class) ;
+        			intent.putExtra("address", GlobalVariable.API_URL + "/vid/stream.php?user_id=" + GlobalVariable.user_id + 
+    						"&accessToken=" + GlobalVariable.accessToken +
+    						"&video_id=" + arr_vids[position]) ;
+        			
+        			intent.putExtra("title", arr_titles[position]) ;
+        			startActivity(intent) ;
+        			
+        		}
             }
 		}) ;
         
-        btnCart.setOnClickListener(new OnClickListener() {
+        label_cart.setOnClickListener(new OnClickListener() {
 			
 			@Override
-			public void onClick(View arg0) {
-				sendCartRequest() ;
+			public void onClick(View v) {
+				if ( total_videos > 1 )
+					sendCartRequest() ;
 			}
 		}) ;
         
@@ -323,7 +319,7 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 		builder.addTextBody("email", GlobalVariable.email, ContentType.TEXT_PLAIN);
 		builder.addTextBody("b_id", b_id, ContentType.TEXT_PLAIN);
 		builder.addTextBody("platform", "android", ContentType.TEXT_PLAIN);
-		builder.addTextBody("price", String.format("%.02f", total_videos*0.99), ContentType.TEXT_PLAIN);
+		builder.addTextBody("price", String.format("%.02f", total_videos*9.99), ContentType.TEXT_PLAIN);
 		
 		String temp = "[" ;
 		for ( int i = 0 ; i < arr_vids.length ; i++ )
@@ -336,7 +332,7 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 		temp = temp + "]" ;
 		
 		builder.addTextBody("v_ids", temp, ContentType.TEXT_PLAIN) ;
-		GlobalVariable.request_url = "http://longhairhow2.com/api/sales/putCustom" ;
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/sales/putCustom" ;
 		
 		nRequestKind = 1 ;
 		
@@ -364,7 +360,7 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 		params.addTextBody("action", "/common/access-token/grant", ContentType.TEXT_PLAIN);
 		params.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN);
 		
-		GlobalVariable.request_url = "http://longhairhow2.com/api/common/access-token/grant" ;
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/common/access-token/grant" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = this;
@@ -396,7 +392,13 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 					if (jsonObj.get("type").equals("Success"))
 					{
 						//JSONArray result = jsonObj.getJSONArray("results") ;
-						Toast.makeText(FeaturedDetailActivity.this, "Purchase Successfully Recorded.", Toast.LENGTH_LONG).show() ;
+						String res = "" ;
+						if ( total_videos > 1 )
+							res = String.format("BUY %d videos @ AU$ %.02f", total_videos, total_videos * 9.99) ;
+						else
+							res = String.format("%d video @ AU$ %.02f", total_videos, total_videos * 9.99) ;
+						
+						Toast.makeText(FeaturedDetailActivity.this, res, Toast.LENGTH_LONG).show() ;
 					}
 				} catch (JSONException e) {
 					e.printStackTrace();

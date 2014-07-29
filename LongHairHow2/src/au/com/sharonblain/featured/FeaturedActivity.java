@@ -20,6 +20,7 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.util.Log;
@@ -31,7 +32,9 @@ import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import au.com.sharonblain.longhairhow2.ProfileActivity;
 import au.com.sharonblain.longhairhow2.R;
 import au.com.sharonblain.request_server.AsyncResponse;
 import au.com.sharonblain.request_server.GlobalVariable;
@@ -54,13 +57,18 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 	
 	private Button btn_featured, btn_popular ;
 	
+	@Override
+	public void onBackPressed() {
+	}
+	
+	
 	private void getLayoutObjects()
 	{
 		imgProfilePhoto = (ImageView)findViewById(R.id.img_profile_photo) ;
         label_type = (TextView)findViewById(R.id.label_type) ;
         grid = (GridView)findViewById(R.id.grid_photos) ;
         
-        label_type.setTypeface(GlobalVariable.tf_light) ;
+        label_type.setTypeface(GlobalVariable.tf_medium) ;
         btn_featured = (Button)findViewById(R.id.btn_featured) ;
         btn_popular = (Button)findViewById(R.id.btn_popular) ;
         
@@ -90,7 +98,10 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 			public void onClick(View arg0) {
 				btn_featured.setSelected(true) ;
 				btn_popular.setSelected(false) ;
+				label_type.setText("Featured") ;
 				
+				btn_featured.setTextColor(Color.WHITE) ;
+				btn_popular.setTextColor(Color.GRAY) ;
 				_sendFeaturedRequest("/front-page/get") ;
 			}
 		}) ;
@@ -101,12 +112,49 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 			public void onClick(View arg0) {
 				btn_featured.setSelected(false) ;
 				btn_popular.setSelected(true) ;
+				label_type.setText("Popular") ;
 				
+				btn_featured.setTextColor(Color.GRAY) ;
+				btn_popular.setTextColor(Color.WHITE) ;
 				_sendFeaturedRequest("/popular/get") ;
 			}
 		}) ;
         
-        if ( GlobalVariable.profile_photo_path != null && GlobalVariable.profile_photo_path.length() > 1 )
+        imgProfilePhoto.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View arg0) {
+				Intent intent = new Intent(FeaturedActivity.this, ProfileActivity.class) ;
+				startActivity(intent) ;
+				
+			}
+		}) ;
+        
+        _sendFeaturedRequest("/front-page/get") ;
+        
+        grid.setOnItemClickListener(new OnItemClickListener() {
+            
+			@Override
+			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
+					long arg3) {
+				
+				Intent myIntent = new Intent(FeaturedActivity.this, FeaturedDetailActivity.class);
+				myIntent.putExtra("b_id", b_id.get(arg2)) ;
+				myIntent.putExtra("video", bun_vid_url.get(arg2)) ;
+				myIntent.putExtra("videos", vid_url.get(arg2)) ;
+				myIntent.putExtra("title", bun_title.get(arg2)) ;
+				myIntent.putExtra("prices", prices.get(arg2)) ;
+				myIntent.putExtra("images", vid_image.get(arg2)) ;
+				myIntent.putExtra("titles", vid_title.get(arg2)) ;				
+				myIntent.putExtra("description", bun_description.get(arg2)) ;
+				myIntent.putExtra("v_ids", v_id.get(arg2)) ;
+				startActivity(myIntent);				
+			}
+        });
+	}
+	
+	private void setProfilePhoto() {
+		if ( GlobalVariable.profile_photo_path != null && GlobalVariable.profile_photo_path.length() > 1 && !GlobalVariable.profile_photo_path.equals("/user/images/"))
         {
         	options = new DisplayImageOptions.Builder()
     		.showImageForEmptyUri(R.drawable.default_user_icon)
@@ -130,11 +178,8 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
         	    StrictMode.setThreadPolicy(policy);
         	}
         	
-        	Bitmap bmp = ImageLoader.getInstance().loadImageSync("http://longhairhow2.com/api" + GlobalVariable.profile_photo_path, targetSize, options);
+        	Bitmap bmp = ImageLoader.getInstance().loadImageSync(GlobalVariable.API_URL + GlobalVariable.profile_photo_path, targetSize, options);
         	imgProfilePhoto.setImageBitmap(GlobalVariable.getCircularBitmap(bmp)) ;
-        	
-        	imgProfilePhoto.getLayoutParams().width = 80 ;
-        	imgProfilePhoto.getLayoutParams().height = 80 ;
         	
         	try {
         		ImageLoader.getInstance().destroy() ;
@@ -142,27 +187,6 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
         		e.printStackTrace() ;
         	}
         }
-        
-        _sendFeaturedRequest("/front-page/get") ;
-        
-        grid.setOnItemClickListener(new OnItemClickListener() {
-            
-			@Override
-			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
-					long arg3) {
-				
-				Intent myIntent = new Intent(FeaturedActivity.this, FeaturedDetailActivity.class);
-				myIntent.putExtra("b_id", b_id.get(arg2)) ;
-				myIntent.putExtra("video", bun_vid_url.get(arg2)) ;
-				myIntent.putExtra("title", bun_title.get(arg2)) ;
-				myIntent.putExtra("prices", prices.get(arg2)) ;
-				myIntent.putExtra("images", vid_image.get(arg2)) ;
-				myIntent.putExtra("titles", vid_title.get(arg2)) ;				
-				myIntent.putExtra("description", bun_description.get(arg2)) ;
-				myIntent.putExtra("v_ids", v_id.get(arg2)) ;
-				startActivity(myIntent);				
-			}
-        });
 	}
 	
 	private void _sendFeaturedRequest(String action)
@@ -196,13 +220,40 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 			builder.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN);
 		builder.addTextBody("front_type", "hot", ContentType.TEXT_PLAIN);
 		
-		GlobalVariable.request_url = "http://longhairhow2.com/api/front-page/get" ;
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/front-page/get" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = FeaturedActivity.this ;
 		httpTask.execute(builder) ;
 	}
 	
+	protected void getPurchasedVideos() {
+    	
+		nRequestKind = 3 ;
+		
+    	if ( _dialog_progress == null || !_dialog_progress.isShowing() )
+    	{
+    		try {
+    			_dialog_progress = ProgressDialog.show(this, "Loading...", 
+        				"Please wait...", true) ;
+    		}catch (NullPointerException e) {
+    			e.printStackTrace() ;
+    		}
+    	}
+    		
+    	MultipartEntityBuilder builder = MultipartEntityBuilder.create() ;
+    	builder.addTextBody("action", "/user/bundles/get", ContentType.TEXT_PLAIN) ;
+    	builder.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN) ;
+    	builder.addTextBody("u_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN) ;
+    	builder.addTextBody("accessToken", GlobalVariable.accessToken, ContentType.TEXT_PLAIN) ;
+		
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/user/bundles/get" ;
+		
+		httpTask = new HttpPostTask() ;
+		httpTask.delegate = FeaturedActivity.this ;
+		httpTask.execute(builder) ;		
+	}
+
 	@Override
 	public void processFinish(String output) throws IllegalArgumentException {
 		httpTask.delegate = FeaturedActivity.this ;
@@ -236,14 +287,15 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 						
 						for ( int i = 0 ; i < result.length() ; i++ )
 						{
-							b_id.add(result.getJSONObject(i).getString("b_id")) ;
-							bun_vid_url.add(result.getJSONObject(i).getString("bun_vid_url")) ;
-							bun_image.add(result.getJSONObject(i).getString("bun_image")) ;
-							bun_description.add(result.getJSONObject(i).getString("description")) ;
-							bun_title.add(result.getJSONObject(i).getString("title")) ;
-							prices.add(result.getJSONObject(i).getString("price")) ;
+							JSONObject obj = result.getJSONObject(i) ;
+							b_id.add(obj.getString("b_id")) ;
+							bun_vid_url.add(obj.getString("bun_vid_url")) ;
+							bun_image.add(obj.getString("bun_image")) ;
+							bun_description.add(obj.getString("description")) ;
+							bun_title.add(obj.getString("title")) ;
+							prices.add(obj.getString("price")) ;
 							
-							JSONArray res_videos = result.getJSONObject(i).getJSONArray("videos") ;
+							JSONArray res_videos = obj.getJSONArray("videos") ;
 							
 							String _temp_id = "", _temp_url = "", _temp_title = "", _temp_image = "" ;
 							
@@ -252,7 +304,7 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 								_temp_id = _temp_id + res_videos.getJSONObject(j).getString("v_id") + "^";
 								_temp_url = _temp_url + res_videos.getJSONObject(j).getString("vid_url") + "^" ;
 								_temp_title = _temp_title + res_videos.getJSONObject(j).getString("vid_title") + "^" ;
-								_temp_image = _temp_image + "http://longhairhow2.com/api" + 
+								_temp_image = _temp_image + GlobalVariable.API_URL + 
 												res_videos.getJSONObject(j).getString("vid_image") + "^" ;
 							}
 							
@@ -265,6 +317,8 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 						adapter = new GridAdapter(FeaturedActivity.this, vid_title) ;
 						adapter.updateAdapter(bun_title, vid_image, prices, vid_url, bun_description) ;
 						grid.setAdapter(adapter) ;
+						
+						getPurchasedVideos() ;
 					}
 					else
 					{
@@ -280,11 +334,65 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 					
 				}
 			} else {
-				Log.e("ServiceHandler", "Couldn't get any data from the url") ;	
+				Log.e("ServiceHandler", "Couldn't get any data from the server.") ;	
 				getAccessToken() ;				
 			}
 		}
-		else
+		else if ( nRequestKind == 3 )
+		{
+			if (output.length() > 0) {
+				try {
+					JSONObject jsonObj = new JSONObject(output) ;
+					if (jsonObj.get("type").equals("Success"))
+					{
+						JSONArray result = jsonObj.getJSONArray("results") ;
+						JSONObject addedVids = new JSONObject() ;
+						GlobalVariable.purchasedVideos = new ArrayList<String>() ;
+						
+						for ( int i = 0 ; i < result.length() ; i++ )
+						{
+							JSONObject video = result.getJSONObject(i) ;
+							if ( video.has("vids") )
+							{
+								JSONArray temp_vids = video.getJSONArray("vids") ;
+								
+								for ( int j = 0 ; j < temp_vids.length() ; j++ )
+								{
+									JSONObject vidIn = temp_vids.getJSONObject(j) ;
+									
+									if ( addedVids.has(vidIn.getString("v_id")) == false )
+									{
+										JSONObject newVidDict = new JSONObject(vidIn.toString()) ;
+										if ( video.has("valid_until") )
+											newVidDict.put("valid_until", video.getString("valid_until")) ;
+										else
+											newVidDict.put("valid_until", "") ;
+										
+										addedVids.put(vidIn.getString("v_id"), vidIn) ;
+										GlobalVariable.purchasedVideos.add(vidIn.getString("v_id")) ;
+									}
+								}
+							}														
+						}
+					}
+					else
+					{
+						Toast.makeText(FeaturedActivity.this, jsonObj.getString("type") + " - " + jsonObj.getString("message"), Toast.LENGTH_LONG).show() ;
+						getAccessToken() ;
+					}
+				
+				} catch (JSONException e) {
+					e.printStackTrace();
+					
+				}
+			} else {
+				Log.e("ServiceHandler", "Couldn't get any data from the server.") ;
+				
+			}
+			
+			setProfilePhoto() ;
+		}
+		else if ( nRequestKind == 2 )
 		{
 			try {
 				JSONObject jsonObj = new JSONObject(output) ;
@@ -350,7 +458,7 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 		params.addTextBody("action", "/common/access-token/grant", ContentType.TEXT_PLAIN);
 		params.addTextBody("user_id", GlobalVariable.user_id, ContentType.TEXT_PLAIN);
 		
-		GlobalVariable.request_url = "http://longhairhow2.com/api/common/access-token/grant" ;
+		GlobalVariable.request_url = GlobalVariable.API_URL + "/common/access-token/grant" ;
 		
 		httpTask = new HttpPostTask() ;
 		httpTask.delegate = this;

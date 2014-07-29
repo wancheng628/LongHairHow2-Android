@@ -7,7 +7,7 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:background="#ffffff" >
 
         <TextView
@@ -17,6 +17,7 @@
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true"
             android:text="Featured"
+            android:textColor="#000000"
             android:textSize="24sp" />
 
         <ImageView
@@ -25,7 +26,7 @@
             android:layout_height="50dp"
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
-            android:layout_marginRight="20dp"
+            android:layout_marginRight="10dp"
             android:src="@drawable/default_user_icon" />
 
     </RelativeLayout>
@@ -48,7 +49,7 @@
             <Button
                 android:id="@+id/btn_featured"
                 android:layout_width="100dp"
-                android:layout_height="40dp"
+                android:layout_height="wrap_content"
                 android:background="@drawable/btn_select"
                 android:text="Featured"
                 android:textColor="#ffffff"
@@ -57,11 +58,11 @@
             <Button
                 android:id="@+id/btn_popular"
                 android:layout_width="100dp"
-                android:layout_height="40dp"
+                android:layout_height="wrap_content"
                 android:layout_toRightOf="@id/btn_featured"
                 android:background="@drawable/btn_select"
                 android:text="Popular"
-                android:textColor="#ffffff"
+                android:textColor="#cccccc"
                 android:textSize="16sp" />
 
         </LinearLayout>
