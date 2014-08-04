@@ -27,6 +27,7 @@ public class MainActivity extends TabActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
 		setTabs() ;
+		
 	}
 	
 	@Override

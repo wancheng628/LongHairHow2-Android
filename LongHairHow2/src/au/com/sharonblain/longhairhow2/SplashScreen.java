@@ -43,8 +43,6 @@ public class SplashScreen extends Activity implements AsyncResponse {
         httpTask.delegate = SplashScreen.this ;
         
         new Handler().postDelayed(new Runnable() {
-            
-            
             @Override
             public void run() {
                 

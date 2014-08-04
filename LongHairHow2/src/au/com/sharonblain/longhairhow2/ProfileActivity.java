@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -33,6 +32,7 @@ import android.os.Environment;
 import android.os.Parcelable;
 import android.os.StrictMode;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.webkit.ConsoleMessage;
@@ -55,7 +55,15 @@ public class ProfileActivity extends Activity {
     private static final int FILECHOOSER_RESULTCODE   = 2888;
     private ValueCallback<Uri> mUploadMessage;
     private Uri mCapturedImageURI = null;
-    WebView webview ;
+    private WebView webview ;
+    
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent(ProfileActivity.this, MainActivity.class) ;
+        startActivity(intent) ;
+        finish() ;
+    }
+    
 	private void setProfilePhoto()
 	{
 		TextView mTitleTextView = (TextView)findViewById(R.id.label_type);
@@ -93,6 +101,7 @@ public class ProfileActivity extends Activity {
         }         
 	}
 	
+	@SuppressLint("JavascriptInterface")
 	@SuppressWarnings("deprecation")
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -164,17 +173,42 @@ public class ProfileActivity extends Activity {
 			e.printStackTrace();
 		}
         
+        class MyJavaScriptInterface
+        {
+            @SuppressWarnings("unused")
+            public void processHTML(String html)
+            {
+                Log.d("AAA", html) ;
+                String jsonStr = html.replace("<head></head><body style=\"color:white !important;\">", "").replace("</body>", "") ;
+                try {
+					JSONObject jsonObj = new JSONObject(jsonStr) ;
+					JSONArray jsonArr = jsonObj.getJSONArray("results") ;
+					jsonObj = jsonArr.getJSONObject(0) ;
+					
+					GlobalVariable.f_name = jsonObj.getString("f_name");
+					GlobalVariable.l_name = jsonObj.getString("l_name");
+					GlobalVariable.email = jsonObj.getString("email");
+					GlobalVariable.country = jsonObj.getString("country");
+					GlobalVariable.dob = jsonObj.getString("dob");
+					GlobalVariable.fb_id = jsonObj.getString("fb_id");
+					GlobalVariable.profile_photo_path = jsonObj.getString("profile_pic");
+					GlobalVariable.tempGender = jsonObj.getString("gender");
+					GlobalVariable.user_id = jsonObj.getString("u_id") ;
+					
+					Intent intent = new Intent(ProfileActivity.this, MainActivity.class) ;
+			        startActivity(intent) ;
+			        finish() ;
+					
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+            }
+        }
         
         htmlString = htmlString.replace("INSERT-COUNTRY-SELECT-HERE", _temp) ;
         
         webview.getSettings().setJavaScriptEnabled(true);
-        
-        // Other webview options
         webview.getSettings().setLoadWithOverviewMode(true);
-         
-        //webView.getSettings().setUseWideViewPort(true);
-         
-        //Other webview settings
         webview.setScrollBarStyle(WebView.SCROLLBARS_OUTSIDE_OVERLAY);
         webview.setScrollbarFadingEnabled(false);
         webview.getSettings().setBuiltInZoomControls(true);
@@ -182,9 +216,9 @@ public class ProfileActivity extends Activity {
         webview.getSettings().setAllowFileAccess(true);
         webview.getSettings().setSupportZoom(true);
         webview.loadData(htmlString, "text/html; charset=utf-8", "UTF-8");
-        
+        webview.addJavascriptInterface(new MyJavaScriptInterface(), "HTMLOUT");
         startWebView() ; 
-                
+        
         TextView btn_logout = (TextView)findViewById(R.id.btn_logout) ;
         btn_logout.setOnClickListener(new OnClickListener() {
 			
@@ -213,13 +247,15 @@ public class ProfileActivity extends Activity {
 			}
 		}) ;
 	}
-	
+		
+	@SuppressLint("JavascriptInterface")
 	private void startWebView() {
         webview.setWebViewClient(new WebViewClient() {      
             ProgressDialog progressDialog;
           
+            @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) { 
-                if(url.contains("google")){ 
+                if(url.contains("set.php")){ 
                     view.getContext().startActivity( new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
                     return true;                     
                 } else {
@@ -256,13 +292,14 @@ public class ProfileActivity extends Activity {
                         progressDialog.dismiss();
                         progressDialog = null;
                     }
+                    
                 }catch(Exception exception){
                     exception.printStackTrace();
                 }
                 
                 if ( url.equals("http://longhairhow2.com/api/user/set.php") )
                 {
-                	finish() ;
+                	view.loadUrl("javascript:window.HTMLOUT.processHTML(document.documentElement.innerHTML);") ;
                 }
             }
             
@@ -339,7 +376,7 @@ public class ProfileActivity extends Activity {
             }
         });   
     }
-     
+	
     @Override 
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) { 
          

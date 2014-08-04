@@ -265,6 +265,7 @@ public class UserVideoActivity extends Activity implements AsyncResponse {
 			public void onClick(View v) {
 				Intent intent = new Intent(UserVideoActivity.this, ProfileActivity.class) ;
 				startActivity(intent) ;
+				finish() ;
 			}
 		}) ;
 	}

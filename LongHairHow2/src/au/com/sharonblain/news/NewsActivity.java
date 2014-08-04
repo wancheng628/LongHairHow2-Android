@@ -315,6 +315,7 @@ public class NewsActivity extends Activity implements AsyncResponse{
 			public void onClick(View v) {
 				Intent intent = new Intent(NewsActivity.this, ProfileActivity.class) ;
 				startActivity(intent) ;
+				finish() ;
 			}
 		}) ;
 	}

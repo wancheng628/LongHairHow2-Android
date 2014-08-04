@@ -13,6 +13,8 @@ import com.nostra13.universalimageloader.core.ImageLoaderConfiguration;
 import com.nostra13.universalimageloader.core.assist.ImageScaleType;
 import com.nostra13.universalimageloader.core.assist.ImageSize;
 import com.nostra13.universalimageloader.core.display.FadeInBitmapDisplayer;
+import common.services.billing.IabHelper;
+import common.services.billing.IabResult;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -20,6 +22,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewTreeObserver;
@@ -37,6 +40,8 @@ import au.com.sharonblain.request_server.GlobalVariable;
 import au.com.sharonblain.request_server.HttpPostTask;
 import au.com.sharonblain.uservideo.VideoStreamActivity;
 
+import common.services.billing.Purchase;
+import common.services.billing.Inventory;
 @SuppressWarnings("deprecation")
 public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 
@@ -65,6 +70,31 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 	int total_videos = 0;
 	int nRequestKind = 1 ;
 	
+	private static final String TAG = "au.com.sharonblain.longhairhow2.inappbilling";
+	IabHelper mHelper;
+	static final String ITEM_SKU = "android.test.purchased";
+	
+	IabHelper.QueryInventoryFinishedListener mReceivedInventoryListener ;
+	IabHelper.OnConsumeFinishedListener mConsumeFinishedListener ;
+	IabHelper.OnIabPurchaseFinishedListener mPurchaseFinishedListener ;
+	
+	@Override 
+	protected void onStart() {
+		super.onStart();
+		String base64EncodedPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqfak6vyiTDRklTUNfxMk9mhrnLNX5ZRQXRKliEiSRwBMDNQFjn1SllEcQPne02FfiBzA0wLXfT5yUgQMzrcsTpsetc8mi2dMeAXgZhVC5ZpkwBjg0Fvp1iV3zUS0aHlZvtqNd1fP5ZgzuNhGAHBvsDy9o77gEYDMYEPc09kEXrx4x3v3sUUGGYM/AViX2wWEaNJZiiTuuOw6YSDyijqVmR65+GNwaL8Ek9dMDEJAepbmCSkyF/yVuU9cwEiqQWndWuWUOh7JjbGf7pRe7kMzuvZizwPE67WS2byRFQUMN9UfECpVFgU5CCXhCP84UNxKFbu9ipVWJ43oooGXpcY8RQIDAQAB";
+        mHelper = new IabHelper(this, base64EncodedPublicKey);
+        mHelper.startSetup(new IabHelper.OnIabSetupFinishedListener() {
+        	public void onIabSetupFinished(IabResult result) 
+        	{
+        		if (!result.isSuccess()) {
+        			Log.d(TAG, "In-app Billing setup failed: " + result);
+    	        } else {             
+    	      	    Log.d(TAG, "In-app Billing is set up OK");
+    	        }
+    	    }
+        });
+	}
+	
 	@Override
 	protected void onResume() {
 		video.resume();
@@ -81,87 +111,9 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 	protected void onDestroy() {
 		video.stopPlayback();
 	    super.onDestroy();
-	}
-	
-	private void getLayoutObjects()
-	{
-		title = (TextView)findViewById(R.id.label_type) ;
-		video = (VideoView)findViewById(R.id.video_view) ;
-		grid = (ExpandableHeightGridView)findViewById(R.id.grid_photos) ;
-		mDescriptionTextView = (TextView)findViewById(R.id.label_description) ;
-		label_cart = (TextView)findViewById(R.id.label_cart_info) ;
-		label_cart.setTypeface(GlobalVariable.tf_medium) ;
-		TextView label_photo_purchase = (TextView)findViewById(R.id.label_photo_purchase) ;
-		label_photo_purchase.setTypeface(GlobalVariable.tf_light) ;
-		title.setTypeface(GlobalVariable.tf_medium) ;
-		mDescriptionTextView.setTypeface(GlobalVariable.tf_light) ;
-		
-		title.setText(getIntent().getExtras().getString("title")) ;
-		mDescriptionTextView.setText(getIntent().getExtras().getString("description")) ;
-		
-	}
-	
-	private void setVideoController() {
-		
-		media_Controller = new MediaController(FeaturedDetailActivity.this); 
-        dm = new DisplayMetrics();
-        
-        this.getWindowManager().getDefaultDisplay().getMetrics(dm); 
-        int width = dm.widthPixels; 
-        
-        video.setMinimumWidth(width); 
-        video.setMinimumHeight(width); 
-        video.setMediaController(media_Controller);
-        video.setVideoPath(GlobalVariable.API_URL + getIntent().getExtras().getString("video")) ;
-        video.start() ;
-        
-	}
-	
-	private void setActionBar()
-	{
-		TextView mTitleTextView = (TextView)findViewById(R.id.label_type);
-        mTitleTextView.setText(getIntent().getExtras().getString("title")) ;
-        mTitleTextView.setTypeface(GlobalVariable.tf_light) ;
- 
-        ImageView profile_photo = (ImageView)findViewById(R.id.img_profile_photo);
-        
-        if ( GlobalVariable.profile_photo_path != null && GlobalVariable.profile_photo_path.length() > 1  && !GlobalVariable.profile_photo_path.equals("/user/images/"))
-        {
-        	options = new DisplayImageOptions.Builder()
-    		.showImageForEmptyUri(R.drawable.default_user_icon)
-    		.showImageOnFail(R.drawable.default_user_icon)
-    		.resetViewBeforeLoading(true)
-    		.cacheOnDisk(true)
-    		.imageScaleType(ImageScaleType.EXACTLY)
-    		.bitmapConfig(Bitmap.Config.RGB_565)
-    		.considerExifParams(true)
-    		.displayer(new FadeInBitmapDisplayer(300))
-    		.build();
-        	
-        	ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(getApplicationContext())
-        	.defaultDisplayImageOptions(options)
-        	.build();
-        	ImageLoader.getInstance().init(config);
-        	ImageSize targetSize = new ImageSize(160, 160);
-        	Bitmap bmp = ImageLoader.getInstance().loadImageSync(GlobalVariable.API_URL + GlobalVariable.profile_photo_path, targetSize, options);
-        	profile_photo.setImageBitmap(GlobalVariable.getCircularBitmap(bmp)) ;
-        	try {
-        		ImageLoader.getInstance().destroy() ;
-        	} catch (NullPointerException e) {
-        		e.printStackTrace() ;
-        	}
-        	
-        }
-        
-        profile_photo.setOnClickListener(new OnClickListener() {
- 
-            @Override
-            public void onClick(View view) {
-            	Intent intent = new Intent(FeaturedDetailActivity.this, ProfileActivity.class) ;
-				startActivity(intent) ;
-            }
-        });
- 
+	    
+	    if (mHelper != null) mHelper.dispose();
+			mHelper = null;
 	}
 	
 	@Override
@@ -174,68 +126,7 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
         
         getLayoutObjects() ;		
         setActionBar() ;
-        
-        b_id = getIntent().getExtras().getString("b_id") ;
-        String _image_urls = getIntent().getExtras().getString("images") ;
-        String _titles = getIntent().getExtras().getString("titles") ;
-        String price = getIntent().getExtras().getString("prices") ;
-        String _v_ids = getIntent().getExtras().getString("v_ids") ;
-        
-        if ( _image_urls != null & _image_urls.length() > 1 )
-        {
-        	_image_urls = _image_urls.replace(" ", "") ;
-        	arr_images = _image_urls.split("\\^") ;
-        }
-        
-        if ( _titles != null & _titles.length() > 1 )
-        {
-        	_titles = _titles.replace(" ", "") ;
-        	arr_titles = _titles.split("\\^") ;
-        }
-        
-        if ( _v_ids != null & _v_ids.length() > 1 )
-        {
-        	_v_ids = _v_ids.replace(" ", "") ;
-        	arr_vids = _v_ids.split("\\^") ;
-        }
-        
-        for ( int i = 0 ; i < arr_titles.length ; i++ ) {
-        	String[] _temp ;
-        	if ( arr_titles[i].contains("-") )
-        		_temp = arr_titles[i].split("\\-") ;
-        	else
-        		_temp = arr_titles[i].split("\\:") ;
-        	
-        	if ( _temp.length > 1 )
-        		arr_titles[i] = _temp[1] ;
-        }
-        
-        JSONObject objPrice = null ;
-		try {
-			objPrice = new JSONObject(price);
-			arr_prices = new String[6] ;
-	        
-	        for ( int i = 1 ; i < 7 ; i++ )
-	        {
-	        	JSONObject _temp = new JSONObject(objPrice.getString(String.valueOf(i))) ;
-	        	arr_prices[i-1] = _temp.getString("price") ;
-	        }
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-        
-        arr_charged = new boolean[6] ;
-        for ( int i = 0 ; i < 6 ; i++ )
-        	arr_charged[i] = false ;
-        
-        arr_purchased = new boolean[6] ;
-        for ( int i = 0 ; i < 6 ; i++ )
-        {
-        	if ( GlobalVariable.purchasedVideos.contains(arr_vids[i]))
-        		arr_purchased[i] = true ;
-        	else
-        		arr_purchased[i] = false ;
-        }
+        getArrayVariables() ;        
         
         grid.setAdapter(new GridDetailAdapter(this, arr_titles, arr_images, arr_purchased));
         grid.setExpanded(true);
@@ -292,15 +183,59 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
             }
 		}) ;
         
+        mPurchaseFinishedListener = new IabHelper.OnIabPurchaseFinishedListener() {
+        	public void onIabPurchaseFinished(IabResult result, Purchase purchase) 
+	    	{
+        		if (result.isFailure()) {
+        			return;
+        		}      
+        		else if (purchase.getSku().equals(ITEM_SKU)) {
+        			consumeItem();
+        			//buyButton.setEnabled(false);
+        		}
+	    	}
+        };
+        
+        mConsumeFinishedListener = new IabHelper.OnConsumeFinishedListener() {
+        	public void onConsumeFinished(Purchase purchase, IabResult result) {
+        		if (result.isSuccess()) {		    	 
+        			//clickButton.setEnabled(true);
+        		} else {
+        		}
+        	}
+        };
+        
+        mReceivedInventoryListener = new IabHelper.QueryInventoryFinishedListener() {
+        	public void onQueryInventoryFinished(IabResult result, Inventory inventory) {
+        		if (result.isFailure()) {
+        		} else {
+        			mHelper.consumeAsync(inventory.getPurchase(ITEM_SKU), mConsumeFinishedListener);
+        		}
+        	}
+        };
+    
         label_cart.setOnClickListener(new OnClickListener() {
 			
 			@Override
 			public void onClick(View v) {
-				if ( total_videos > 1 )
-					sendCartRequest() ;
+				mHelper.launchPurchaseFlow(FeaturedDetailActivity.this, ITEM_SKU, 10001, mPurchaseFinishedListener);
+				//if ( total_videos > 1 )
+				//	sendCartRequest() ;
 			}
 		}) ;
         
+	}
+	
+	public void consumeItem() {
+		mHelper.queryInventoryAsync(mReceivedInventoryListener);
+	}
+	
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) 
+	{
+		if (!mHelper.handleActivityResult(requestCode, resultCode, data)) {     
+	    	super.onActivityResult(requestCode, resultCode, data);
+		}
 	}
 	
 	private void sendCartRequest()
@@ -399,6 +334,8 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 							res = String.format("%d video @ AU$ %.02f", total_videos, total_videos * 9.99) ;
 						
 						Toast.makeText(FeaturedDetailActivity.this, res, Toast.LENGTH_LONG).show() ;
+						
+						
 					}
 				} catch (JSONException e) {
 					e.printStackTrace();
@@ -452,5 +389,153 @@ public class FeaturedDetailActivity extends Activity implements AsyncResponse {
 		
 		sendCartRequest() ;
     }
+	
+
+	private void getLayoutObjects()
+	{
+		title = (TextView)findViewById(R.id.label_type) ;
+		video = (VideoView)findViewById(R.id.video_view) ;
+		grid = (ExpandableHeightGridView)findViewById(R.id.grid_photos) ;
+		mDescriptionTextView = (TextView)findViewById(R.id.label_description) ;
+		label_cart = (TextView)findViewById(R.id.label_cart_info) ;
+		label_cart.setTypeface(GlobalVariable.tf_medium) ;
+		TextView label_photo_purchase = (TextView)findViewById(R.id.label_photo_purchase) ;
+		label_photo_purchase.setTypeface(GlobalVariable.tf_light) ;
+		title.setTypeface(GlobalVariable.tf_medium) ;
+		mDescriptionTextView.setTypeface(GlobalVariable.tf_light) ;
+		
+		title.setText(getIntent().getExtras().getString("title")) ;
+		mDescriptionTextView.setText(getIntent().getExtras().getString("description")) ;
+		
+	}
+	
+	private void setVideoController() {
+		
+		media_Controller = new MediaController(FeaturedDetailActivity.this); 
+        dm = new DisplayMetrics();
+        
+        this.getWindowManager().getDefaultDisplay().getMetrics(dm); 
+        int width = dm.widthPixels; 
+        
+        video.setMinimumWidth(width); 
+        video.setMinimumHeight(width); 
+        video.setMediaController(media_Controller);
+        video.setVideoPath(GlobalVariable.API_URL + getIntent().getExtras().getString("video")) ;
+        video.start() ;
+        
+	}
+	
+	private void setActionBar()
+	{
+		TextView mTitleTextView = (TextView)findViewById(R.id.label_type);
+        mTitleTextView.setText(getIntent().getExtras().getString("title")) ;
+        mTitleTextView.setTypeface(GlobalVariable.tf_light) ;
+ 
+        ImageView profile_photo = (ImageView)findViewById(R.id.img_profile_photo);
+        
+        if ( GlobalVariable.profile_photo_path != null && GlobalVariable.profile_photo_path.length() > 1  && !GlobalVariable.profile_photo_path.equals("/user/images/"))
+        {
+        	options = new DisplayImageOptions.Builder()
+    		.showImageForEmptyUri(R.drawable.default_user_icon)
+    		.showImageOnFail(R.drawable.default_user_icon)
+    		.resetViewBeforeLoading(true)
+    		.cacheOnDisk(true)
+    		.imageScaleType(ImageScaleType.EXACTLY)
+    		.bitmapConfig(Bitmap.Config.RGB_565)
+    		.considerExifParams(true)
+    		.displayer(new FadeInBitmapDisplayer(300))
+    		.build();
+        	
+        	ImageLoaderConfiguration config = new ImageLoaderConfiguration.Builder(getApplicationContext())
+        	.defaultDisplayImageOptions(options)
+        	.build();
+        	ImageLoader.getInstance().init(config);
+        	ImageSize targetSize = new ImageSize(160, 160);
+        	Bitmap bmp = ImageLoader.getInstance().loadImageSync(GlobalVariable.API_URL + GlobalVariable.profile_photo_path, targetSize, options);
+        	profile_photo.setImageBitmap(GlobalVariable.getCircularBitmap(bmp)) ;
+        	try {
+        		ImageLoader.getInstance().destroy() ;
+        	} catch (NullPointerException e) {
+        		e.printStackTrace() ;
+        	}
+        	
+        }
+        
+        profile_photo.setOnClickListener(new OnClickListener() {
+ 
+            @Override
+            public void onClick(View view) {
+            	Intent intent = new Intent(FeaturedDetailActivity.this, ProfileActivity.class) ;
+				startActivity(intent) ;
+				finish() ;
+            }
+        });
+ 
+	}
+	
+	private void getArrayVariables() {
+		b_id = getIntent().getExtras().getString("b_id") ;
+        String _image_urls = getIntent().getExtras().getString("images") ;
+        String _titles = getIntent().getExtras().getString("titles") ;
+        String price = getIntent().getExtras().getString("prices") ;
+        String _v_ids = getIntent().getExtras().getString("v_ids") ;
+        
+        if ( _image_urls != null & _image_urls.length() > 1 )
+        {
+        	_image_urls = _image_urls.replace(" ", "") ;
+        	arr_images = _image_urls.split("\\^") ;
+        }
+        
+        if ( _titles != null & _titles.length() > 1 )
+        {
+        	_titles = _titles.replace(" ", "") ;
+        	arr_titles = _titles.split("\\^") ;
+        }
+        
+        if ( _v_ids != null & _v_ids.length() > 1 )
+        {
+        	_v_ids = _v_ids.replace(" ", "") ;
+        	arr_vids = _v_ids.split("\\^") ;
+        }
+        
+        for ( int i = 0 ; i < arr_titles.length ; i++ ) {
+        	String[] _temp ;
+        	if ( arr_titles[i].contains("-") )
+        		_temp = arr_titles[i].split("\\-") ;
+        	else
+        		_temp = arr_titles[i].split("\\:") ;
+        	
+        	if ( _temp.length > 1 )
+        		arr_titles[i] = _temp[1] ;
+        }
+        
+        JSONObject objPrice = null ;
+		try {
+			objPrice = new JSONObject(price);
+			arr_prices = new String[6] ;
+	        
+	        for ( int i = 1 ; i < 7 ; i++ )
+	        {
+	        	JSONObject _temp = new JSONObject(objPrice.getString(String.valueOf(i))) ;
+	        	arr_prices[i-1] = _temp.getString("price") ;
+	        }
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+        
+        arr_charged = new boolean[6] ;
+        for ( int i = 0 ; i < 6 ; i++ )
+        	arr_charged[i] = false ;
+        
+        arr_purchased = new boolean[6] ;
+        for ( int i = 0 ; i < 6 ; i++ )
+        {
+        	if ( GlobalVariable.purchasedVideos.contains(arr_vids[i]))
+        		arr_purchased[i] = true ;
+        	else
+        		arr_purchased[i] = false ;
+        }
+	}
+	
 	
 }

@@ -122,6 +122,7 @@ public class SearchActivity extends Activity implements AsyncResponse {
             public void onClick(View view) {
             	Intent intent = new Intent(SearchActivity.this, ProfileActivity.class) ;
 				startActivity(intent) ;
+				finish() ;
             }
         });
  

@@ -126,7 +126,7 @@ public class FeaturedActivity extends Activity implements AsyncResponse {
 			public void onClick(View arg0) {
 				Intent intent = new Intent(FeaturedActivity.this, ProfileActivity.class) ;
 				startActivity(intent) ;
-				
+				finish() ;
 			}
 		}) ;
         
